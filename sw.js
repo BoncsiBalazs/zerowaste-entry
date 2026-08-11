@@ -1,11 +1,10 @@
-
-const CACHE_NAME = "zerowaste-entry-v2";
+const CACHE_NAME = "zerowaste-entry-v2-1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./data.js",
+  "./styles.css?v=2.1.0",
+  "./app.js?v=2.1.0",
+  "./data.js?v=2.1.0",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
@@ -30,20 +29,32 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+  const url = new URL(event.request.url);
+  const isAppAsset = event.request.mode === "navigate" ||
+    /\/(index\.html|app\.js|data\.js|styles\.css|manifest\.webmanifest)$/.test(url.pathname);
 
-      return fetch(event.request).then(response => {
-        if (response && (response.ok || response.type === "opaque")) {
+  if (isAppAsset) {
+    // Frissítéskor előbb a hálózatot próbáljuk, így nem keveredik
+    // az új HTML a régi JavaScript-tel. Offline esetben cache fallback.
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        }
-        return response;
-      }).catch(() => {
-        if (event.request.mode === "navigate") return caches.match("./index.html");
-        throw new Error("Offline resource unavailable");
-      });
-    })
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(r => r || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+      if (response && (response.ok || response.type === "opaque")) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      }
+      return response;
+    }))
   );
 });

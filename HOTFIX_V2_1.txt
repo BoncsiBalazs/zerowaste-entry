@@ -1,0 +1,8 @@
+ZeroWaste Entry v2.1 hotfix
+
+Javítások:
+- null.addEventListener indulási hiba ellen védett eseménykötés;
+- cache-busting az index/app/data/styles fájlokra;
+- service worker network-first a programfájlokra, így frissítéskor nem keveredik a régi JS az új HTML-lel;
+- cache verzió: zerowaste-entry-v2-1;
+- látható v2.1 verziójelzés a fejlécben.

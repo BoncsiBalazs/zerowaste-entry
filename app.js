@@ -44,6 +44,25 @@ const $ = (id) => document.getElementById(id);
 const qs = (sel, root = document) => root.querySelector(sel);
 const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+function bindById(id, eventName, handler) {
+  const el = $(id);
+  if (!el) {
+    console.warn(`[ZeroWaste Entry] Hiányzó UI-elem: #${id}; esemény: ${eventName}`);
+    return false;
+  }
+  el.addEventListener(eventName, handler);
+  return true;
+}
+
+function bindElement(el, eventName, handler, label = "dinamikus elem") {
+  if (!el) {
+    console.warn(`[ZeroWaste Entry] Hiányzó ${label}; esemény: ${eventName}`);
+    return false;
+  }
+  el.addEventListener(eventName, handler);
+  return true;
+}
+
 function todayISO() {
   const d = new Date();
   const offset = d.getTimezoneOffset();
@@ -336,7 +355,7 @@ function renderSensory(prefix, containerId) {
       });
     }
 
-    qs(".add-desc-btn", card).addEventListener("click", () => {
+    bindElement(qs(".add-desc-btn", card), "click", () => {
       const value = safeText(descriptorInput.value);
       if (!value) return;
       const allowed = new Set(descriptorOptions(label).filter(x => x !== "Egyéb"));
@@ -351,20 +370,20 @@ function renderSensory(prefix, containerId) {
       updateFinalState();
     });
 
-    descriptorInput.addEventListener("keydown", (e) => {
+    bindElement(descriptorInput, "keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         qs(".add-desc-btn", card).click();
       }
     });
 
-    qs(".add-other-btn", card).addEventListener("click", () => {
+    bindElement(qs(".add-other-btn", card), "click", () => {
       otherInput.classList.toggle("hidden");
       if (!otherInput.classList.contains("hidden")) otherInput.focus();
       updateFinalState();
     });
 
-    otherInput.addEventListener("input", () => {
+    bindElement(otherInput, "input", () => {
       sensoryState[prefix][key].other = safeText(otherInput.value);
       updateFinalState();
     });
@@ -464,7 +483,7 @@ function renderExtraField(containerId, type, id, label, defaultValue = "") {
       <input id="${id}" type="number" min="0.0001" step="0.01" inputmode="decimal" value="${defaultValue}">
     </label>
   `;
-  $(id).addEventListener("input", updateConversions);
+  bindById(id, "input", updateConversions);
 }
 
 function updateConversionExtras() {
@@ -1217,37 +1236,37 @@ function updateNetworkBadge() {
 }
 
 function bindEvents() {
-  $("prevBtn").addEventListener("click", () => goToStep(currentStep - 1));
-  $("nextBtn").addEventListener("click", () => goToStep(currentStep + 1));
-  $("submitBtn").addEventListener("click", submitCurrent);
+  bindById("prevBtn", "click", () => goToStep(currentStep - 1));
+  bindById("nextBtn", "click", () => goToStep(currentStep + 1));
+  bindById("submitBtn", "click", submitCurrent);
 
-  qsa(".nav-btn").forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+  qsa(".nav-btn").forEach(btn => bindElement(btn, "click", () => switchView(btn.dataset.view), ".nav-btn"));
 
-  $("ageGroup").addEventListener("change", updateAgeGuide);
-  $("soupDish").addEventListener("input", async () => {
+  bindById("ageGroup", "change", updateAgeGuide);
+  bindById("soupDish", "input", async () => {
     await updateDishStatus("soup");
     updateConversionExtras();
     updateConversions();
   });
-  $("mainDish").addEventListener("input", async () => {
+  bindById("mainDish", "input", async () => {
     await updateDishStatus("main");
     updateConversionExtras();
     updateConversions();
   });
 
-  $("soupNewDishBtn").addEventListener("click", () => {
+  bindById("soupNewDishBtn", "click", () => {
     $("soupDish").value = "";
     $("soupDish").focus();
     $("soupDishStatus").textContent = "Írja be az új leves nevét.";
   });
-  $("mainNewDishBtn").addEventListener("click", () => {
+  bindById("mainNewDishBtn", "click", () => {
     $("mainDish").value = "";
     $("mainDish").focus();
     $("mainDishStatus").textContent = "Írja be az új étel nevét.";
   });
 
   ["soupServedUnit","mainServedUnit","soupWasteUnit","mainWasteUnit"].forEach(id =>
-    $(id).addEventListener("change", () => {
+    bindById(id, "change", () => {
       updateConversionExtras();
       updateConversions();
     })
@@ -1258,24 +1277,24 @@ function bindEvents() {
     "mainWastePrimary","mainWasteSide","mainWasteOther",
     "soupImprovement","soupNote","mainImprovement","mainNote",
     "recorderName","mealDate","institution"
-  ].forEach(id => $(id).addEventListener("input", updateFinalState));
+  ].forEach(id => bindById(id, "input", updateFinalState));
 
-  $("soupPhoto").addEventListener("change", async (e) => {
+  bindById("soupPhoto", "change", async (e) => {
     await handlePhoto("soup", e.target.files?.[0] || null);
   });
-  $("mainPhoto").addEventListener("change", async (e) => {
+  bindById("mainPhoto", "change", async (e) => {
     await handlePhoto("main", e.target.files?.[0] || null);
   });
 
-  $("soupTemp").addEventListener("input", () => { updateTemp("soup"); updateFinalState(); });
-  $("mainTemp").addEventListener("input", () => { updateTemp("main"); updateFinalState(); });
+  bindById("soupTemp", "input", () => { updateTemp("soup"); updateFinalState(); });
+  bindById("mainTemp", "input", () => { updateTemp("main"); updateFinalState(); });
 
-  ["exportFrom","exportTo","exportInstitution"].forEach(id => $(id).addEventListener("change", updateExportCount));
-  $("exportCsvBtn").addEventListener("click", exportCsv);
-  $("exportXlsxBtn").addEventListener("click", exportXlsx);
-  $("backupJsonBtn").addEventListener("click", backupJson);
-  $("addInstitutionBtn").addEventListener("click", addInstitution);
-  $("guideSearch").addEventListener("input", renderGuide);
+  ["exportFrom","exportTo","exportInstitution"].forEach(id => bindById(id, "change", updateExportCount));
+  bindById("exportCsvBtn", "click", exportCsv);
+  bindById("exportXlsxBtn", "click", exportXlsx);
+  bindById("backupJsonBtn", "click", backupJson);
+  bindById("addInstitutionBtn", "click", addInstitution);
+  bindById("guideSearch", "input", renderGuide);
 
   window.addEventListener("online", updateNetworkBadge);
   window.addEventListener("offline", updateNetworkBadge);
@@ -1283,15 +1302,17 @@ function bindEvents() {
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
-    $("installBtn").classList.remove("hidden");
+    const installBtn = $("installBtn");
+    if (installBtn) installBtn.classList.remove("hidden");
   });
 
-  $("installBtn").addEventListener("click", async () => {
+  bindById("installBtn", "click", async () => {
     if (!deferredInstallPrompt) return;
     deferredInstallPrompt.prompt();
     await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
-    $("installBtn").classList.add("hidden");
+    const installBtn = $("installBtn");
+    if (installBtn) installBtn.classList.add("hidden");
   });
 }
 
@@ -1327,7 +1348,8 @@ async function init() {
 
   if ("serviceWorker" in navigator) {
     try {
-      await navigator.serviceWorker.register("./sw.js");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=2.1.0");
+      await registration.update();
     } catch (err) {
       console.warn("Service worker registration failed:", err);
     }
