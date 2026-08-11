@@ -1,0 +1,9 @@
+ZeroWaste Entry Web reference-data provenance
+
+A csomag data.js törzsadatai a korábban összeállított ZeroWaste Entry
+törzsadatokból származnak:
+- az adagolási útmutató a felhasználó által megadott táblázat alapján;
+- az ételtörzs az elérhető étlapok és standardizált ételnevek összesítéséből;
+- a fogás-komponens és étel-adag becslési táblák az előző adatfeldolgozásból;
+- az intézménylista a rendelkezésre álló strukturált jelenlegi állományból,
+  és a webappban további intézmények adhatók hozzá.

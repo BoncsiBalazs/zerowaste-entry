@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="ZeroWaste Entry – közétkeztetési élelmiszerhulladék és érzékszervi digitális adatgyűjtő">
+  <title>ZeroWaste Entry</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./data.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <div class="brand">ZeroWaste Entry</div>
+        <div class="subtitle">Digitális közétkeztetési adatgyűjtő</div>
+      </div>
+      <div class="status-wrap">
+        <span id="networkBadge" class="badge neutral">...</span>
+        <button id="installBtn" class="icon-btn hidden" type="button" aria-label="Telepítés">＋</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- ENTRY -->
+      <section id="view-entry" class="view active">
+        <div class="progress-card">
+          <div class="progress-header">
+            <strong id="stepTitle">1. Alapadatok</strong>
+            <span id="stepCounter">1 / 6</span>
+          </div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+
+        <form id="entryForm" novalidate>
+          <!-- STEP 1 -->
+          <section class="step active" data-step="0">
+            <div class="card">
+              <h2>Étkezési esemény</h2>
+
+              <label class="field">
+                <span>Nap <b>*</b></span>
+                <input id="mealDate" type="date" required>
+              </label>
+
+              <label class="field">
+                <span>Korosztály <b>*</b></span>
+                <select id="ageGroup" required>
+                  <option value="">Válasszon korosztályt…</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Intézmény <b>*</b></span>
+                <select id="institution" required>
+                  <option value="">Válasszon intézményt…</option>
+                </select>
+              </label>
+
+              <div id="ageGuideBox" class="info-box muted">
+                A korosztály kiválasztása után megjelenik az adagolási korcsoport.
+              </div>
+
+              <div class="note">
+                A beküldés pontos dátumát és időpontját a rendszer automatikusan rögzíti.
+              </div>
+            </div>
+          </section>
+
+          <!-- STEP 2 -->
+          <section class="step" data-step="1">
+            <div class="card">
+              <div class="section-kicker">LEVES</div>
+              <h2>Mennyiség és hulladék</h2>
+
+              <label class="field">
+                <span>Étel neve <b>*</b></span>
+                <input id="soupDish" list="soupDishList" autocomplete="off" placeholder="Kezdje el begépelni…" required>
+                <datalist id="soupDishList"></datalist>
+              </label>
+              <div class="inline-actions">
+                <button id="soupNewDishBtn" class="secondary-btn small" type="button">Egyéb / új étel</button>
+                <span id="soupDishStatus" class="small-muted"></span>
+              </div>
+
+              <div class="field-grid two">
+                <label class="field">
+                  <span>Kitálalt mennyiség <b>*</b></span>
+                  <input id="soupServed" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Mértékegység <b>*</b></span>
+                  <select id="soupServedUnit" required>
+                    <option value="liter">liter</option>
+                    <option value="kg">kg</option>
+                    <option value="darab">darab</option>
+                    <option value="adag">adag</option>
+                  </select>
+                </label>
+              </div>
+              <div id="soupServedExtra"></div>
+              <div id="soupServedPreview" class="conversion-box"></div>
+
+              <div class="slider-block">
+                <div class="slider-head">
+                  <label for="soupTemp">Tálalási hőmérséklet <b>*</b></label>
+                  <strong id="soupTempValue">65 °C</strong>
+                </div>
+                <input id="soupTemp" type="range" min="0" max="100" step="1" value="65">
+                <div id="soupTempStatus" class="temp-status good">63 °C vagy magasabb</div>
+              </div>
+
+              <h3>Élelmiszerhulladék</h3>
+              <div class="field-grid two">
+                <label class="field">
+                  <span>Összes hulladék <b>*</b></span>
+                  <input id="soupWaste" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Mértékegység <b>*</b></span>
+                  <select id="soupWasteUnit" required>
+                    <option value="kg">kg</option>
+                    <option value="liter">liter</option>
+                    <option value="darab">darab</option>
+                    <option value="adag">adag</option>
+                  </select>
+                </label>
+              </div>
+              <div id="soupWasteExtra"></div>
+              <div id="soupWastePreview" class="conversion-box"></div>
+            </div>
+          </section>
+
+          <!-- STEP 3 -->
+          <section class="step" data-step="2">
+            <div class="card">
+              <div class="section-kicker">LEVES</div>
+              <h2>Érzékszervi minősítés</h2>
+              <div id="soupSensory"></div>
+
+              <label class="field">
+                <span>Javítási javaslat <b>*</b></span>
+                <textarea id="soupImprovement" rows="3" placeholder="Ha nincs: Nincs javítási javaslat" required></textarea>
+              </label>
+              <label class="field">
+                <span>Megjegyzés <b>*</b></span>
+                <textarea id="soupNote" rows="3" placeholder="Ha nincs: Nincs egyéb megjegyzés" required></textarea>
+              </label>
+            </div>
+          </section>
+
+          <!-- STEP 4 -->
+          <section class="step" data-step="3">
+            <div class="card">
+              <div class="section-kicker">MÁSODIK FOGÁS</div>
+              <h2>Mennyiség és hulladék</h2>
+
+              <label class="field">
+                <span>Étel neve <b>*</b></span>
+                <input id="mainDish" list="mainDishList" autocomplete="off" placeholder="Kezdje el begépelni…" required>
+                <datalist id="mainDishList"></datalist>
+              </label>
+              <div class="inline-actions">
+                <button id="mainNewDishBtn" class="secondary-btn small" type="button">Egyéb / új étel</button>
+                <span id="mainDishStatus" class="small-muted"></span>
+              </div>
+              <div id="mainComponentHint" class="info-box muted"></div>
+
+              <div class="field-grid">
+                <label class="field">
+                  <span>Hús / főkomponens <b>*</b></span>
+                  <input id="mainPrimary" type="text" placeholder="Ha nincs: Nincs" required>
+                </label>
+                <label class="field">
+                  <span>Köret <b>*</b></span>
+                  <input id="mainSide" type="text" placeholder="Ha nincs: Nincs" required>
+                </label>
+                <label class="field">
+                  <span>Egyéb komponens <b>*</b></span>
+                  <input id="mainOtherComponent" type="text" placeholder="Ha nincs: Nincs" required>
+                </label>
+              </div>
+
+              <div class="field-grid two">
+                <label class="field">
+                  <span>Kitálalt mennyiség <b>*</b></span>
+                  <input id="mainServed" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Mértékegység <b>*</b></span>
+                  <select id="mainServedUnit" required>
+                    <option value="kg">kg</option>
+                    <option value="liter">liter</option>
+                    <option value="darab">darab</option>
+                    <option value="adag">adag</option>
+                  </select>
+                </label>
+              </div>
+              <div id="mainServedExtra"></div>
+              <div id="mainServedPreview" class="conversion-box"></div>
+
+              <div class="slider-block">
+                <div class="slider-head">
+                  <label for="mainTemp">Tálalási hőmérséklet <b>*</b></label>
+                  <strong id="mainTempValue">65 °C</strong>
+                </div>
+                <input id="mainTemp" type="range" min="0" max="100" step="1" value="65">
+                <div id="mainTempStatus" class="temp-status good">63 °C vagy magasabb</div>
+              </div>
+
+              <h3>Élelmiszerhulladék</h3>
+              <label class="field">
+                <span>Hulladék mértékegysége <b>*</b></span>
+                <select id="mainWasteUnit" required>
+                  <option value="kg">kg</option>
+                  <option value="liter">liter</option>
+                  <option value="darab">darab</option>
+                  <option value="adag">adag</option>
+                </select>
+              </label>
+              <div class="field-grid two">
+                <label class="field">
+                  <span>Összes hulladék <b>*</b></span>
+                  <input id="mainWaste" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Hús / főkomponens hulladéka <b>*</b></span>
+                  <input id="mainWastePrimary" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Köret hulladéka <b>*</b></span>
+                  <input id="mainWasteSide" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+                <label class="field">
+                  <span>Egyéb komponens hulladéka <b>*</b></span>
+                  <input id="mainWasteOther" type="number" min="0" step="0.01" inputmode="decimal" required>
+                </label>
+              </div>
+              <div id="mainWasteExtra"></div>
+              <div id="mainWastePreview" class="conversion-box"></div>
+            </div>
+          </section>
+
+          <!-- STEP 5 -->
+          <section class="step" data-step="4">
+            <div class="card">
+              <div class="section-kicker">MÁSODIK FOGÁS</div>
+              <h2>Érzékszervi minősítés</h2>
+              <div id="mainSensory"></div>
+
+              <label class="field">
+                <span>Javítási javaslat <b>*</b></span>
+                <textarea id="mainImprovement" rows="3" placeholder="Ha nincs: Nincs javítási javaslat" required></textarea>
+              </label>
+              <label class="field">
+                <span>Megjegyzés <b>*</b></span>
+                <textarea id="mainNote" rows="3" placeholder="Ha nincs: Nincs egyéb megjegyzés" required></textarea>
+              </label>
+            </div>
+          </section>
+
+          <!-- STEP 6 -->
+          <section class="step" data-step="5">
+            <div class="card">
+              <h2>Ellenőrzés és beküldés</h2>
+              <div id="reviewContent"></div>
+              <div id="finalValidation" class="validation-box"></div>
+              <button id="submitBtn" class="primary-btn large" type="button" disabled>
+                MÉRÉS BEKÜLDÉSE
+              </button>
+            </div>
+          </section>
+        </form>
+
+        <div class="wizard-actions">
+          <button id="prevBtn" class="secondary-btn" type="button">Vissza</button>
+          <button id="nextBtn" class="primary-btn" type="button">Tovább</button>
+        </div>
+      </section>
+
+      <!-- SAVED -->
+      <section id="view-saved" class="view">
+        <div class="card">
+          <div class="card-head-row">
+            <div>
+              <h2>Mentett adatok</h2>
+              <p class="muted">Az adatok ezen a készüléken, a böngésző helyi adatbázisában tárolódnak.</p>
+            </div>
+            <span id="savedCount" class="count-pill">0</span>
+          </div>
+          <div id="savedList" class="record-list"></div>
+        </div>
+      </section>
+
+      <!-- EXPORT -->
+      <section id="view-export" class="view">
+        <div class="card">
+          <h2>ZeroWaste raw export</h2>
+          <div class="field-grid two">
+            <label class="field">
+              <span>Kezdő dátum</span>
+              <input id="exportFrom" type="date">
+            </label>
+            <label class="field">
+              <span>Záró dátum</span>
+              <input id="exportTo" type="date">
+            </label>
+          </div>
+          <label class="field">
+            <span>Intézmény</span>
+            <select id="exportInstitution">
+              <option value="">Minden intézmény</option>
+            </select>
+          </label>
+          <div id="exportCount" class="info-box">0 exportálható rekord</div>
+          <div class="button-stack">
+            <button id="exportXlsxBtn" class="primary-btn" type="button">XLSX – ZeroWaste raw</button>
+            <button id="exportCsvBtn" class="secondary-btn" type="button">CSV – ZeroWaste raw</button>
+            <button id="backupJsonBtn" class="secondary-btn" type="button">Helyi biztonsági mentés (JSON)</button>
+          </div>
+          <p class="small-muted">
+            Az XLSX intézményenként külön munkalapot készít. A standard mennyiségek: leves = liter, második fogás = kg, hulladék = kg.
+          </p>
+        </div>
+      </section>
+
+      <!-- MASTER -->
+      <section id="view-master" class="view">
+        <div class="card">
+          <h2>Intézménytörzs</h2>
+          <label class="field">
+            <span>Új intézmény neve</span>
+            <input id="newInstitution" type="text">
+          </label>
+          <label class="field">
+            <span>Rövid Excel-munkalapnév</span>
+            <input id="newInstitutionSheet" type="text" maxlength="31">
+          </label>
+          <button id="addInstitutionBtn" class="primary-btn" type="button">Intézmény hozzáadása</button>
+          <div id="institutionList" class="simple-list"></div>
+        </div>
+
+        <div class="card">
+          <h2>Adagolási útmutató</h2>
+          <label class="field">
+            <span>Keresés</span>
+            <input id="guideSearch" type="search" placeholder="pl. leves, burgonya, ragu…">
+          </label>
+          <div id="guideList" class="simple-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Fő navigáció">
+      <button class="nav-btn active" data-view="entry" type="button"><span>✎</span><small>Rögzítés</small></button>
+      <button class="nav-btn" data-view="saved" type="button"><span>▤</span><small>Mentett</small></button>
+      <button class="nav-btn" data-view="export" type="button"><span>⇩</span><small>Export</small></button>
+      <button class="nav-btn" data-view="master" type="button"><span>⚙</span><small>Törzsadat</small></button>
+    </nav>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+  </div>
+</body>
+</html>
