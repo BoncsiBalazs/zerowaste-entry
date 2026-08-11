@@ -45,3 +45,12 @@ Ha már létrehoztad a GitHub Pages repositoryt:
 4. telefonon frissítsd az oldalt.
 
 A service worker cache-neve V2-re változott, ezért az új verzió külön cache-t használ.
+
+
+## V2.2 módosítások
+- érzékszervi útmutató mindkét fogás előtt;
+- listás sensory tulajdonság kötelező, Egyéb opcionális;
+- másodikfogás-törzs újraépítve a véglegesített ételnevekből;
+- külön főétel/főkomponens- és körethőmérséklet;
+- kért megjegyzés-placeholder;
+- v2.2 cache-frissítés.

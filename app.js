@@ -2,7 +2,7 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "2.2.0";
 const DB_NAME = "zerowaste-entry-web";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
@@ -315,6 +315,7 @@ function renderSensory(prefix, containerId) {
       <div class="score-row" aria-label="${label} pontszám">
         ${[1,2,3,4,5].map(n => `<button class="score-btn" data-score="${n}" type="button">${n}</button>`).join("")}
       </div>
+      <div class="descriptor-required-label">Tulajdonság <b>*</b> <span>– legalább egyet válasszon</span></div>
       <div class="descriptor-row">
         <input class="descriptor-input" list="${listId}" placeholder="Tulajdonság keresése…">
         <button class="secondary-btn add-desc-btn" type="button">Hozzáad</button>
@@ -393,7 +394,9 @@ function renderSensory(prefix, containerId) {
 function sensoryComplete(prefix) {
   return ATTRS.every(([key]) => {
     const s = sensoryState[prefix][key];
-    return s.score !== null;
+    // Kötelező: pontszám + legalább egy, a tulajdonságlistából kiválasztott descriptor.
+    // Az „Egyéb tulajdonság” mező továbbra is opcionális, és nem helyettesíti a listás választást.
+    return s.score !== null && s.descriptors.length > 0;
   });
 }
 
@@ -684,7 +687,7 @@ function updateTemp(prefix) {
     status.textContent = "Megfelelő!";
   } else {
     status.className = "temp-status hot";
-    status.textContent = "Túlságosan forró – érzékszervi kockázat?";
+    status.textContent = "Túlságosan forró – érzékszervi?";
   }
 }
 
@@ -817,7 +820,8 @@ function renderReview() {
       ${reviewLine("Étel", $("mainDish").value)}
       ${reviewLine("Kitálalt", `${$("mainServed").value || "–"} ${$("mainServedUnit").value}`)}
       ${reviewLine("Standard", mc.ok ? `${fmtNumber(mc.value,3)} kg` : "nem számítható")}
-      ${reviewLine("Hőmérséklet", `${$("mainTemp").value} °C`)}
+      ${reviewLine("Főétel / főkomponens hőmérséklete", `${$("mainTemp").value} °C`)}
+      ${reviewLine("Köret hőmérséklete", `${$("mainSideTemp").value} °C`)}
       ${reviewLine("Hulladék", mw.ok ? `${fmtNumber(mw.values.total,3)} kg` : "nem számítható")}
       ${reviewLine("Fotó", photoState.main ? "rögzítve" : "nincs")}
       ${reviewLine("Érzékszervi", sensoryComplete("main") ? "teljes" : "hiányos")}
@@ -914,6 +918,7 @@ async function submitCurrent() {
     mainServedStandardKg: mc.value,
     mainServedConversionBasis: mc.basis,
     mainTempC: Number($("mainTemp").value),
+    mainSideTempC: Number($("mainSideTemp").value),
     mainWasteOriginal: numberValue("mainWaste"),
     mainWastePrimaryOriginal: numberValue("mainWastePrimary"),
     mainWasteSideOriginal: numberValue("mainWasteSide"),
@@ -962,6 +967,7 @@ function resetEntry() {
   $("mainWasteUnit").value = "kg";
   $("soupTemp").value = 65;
   $("mainTemp").value = 65;
+  $("mainSideTemp").value = 65;
   resetSensory("soup", "soupSensory");
   resetSensory("main", "mainSensory");
   photoState.soup = null;
@@ -970,6 +976,7 @@ function resetEntry() {
   $("mainPhotoPreview").textContent = "Nincs fotó kiválasztva.";
   updateTemp("soup");
   updateTemp("main");
+  updateTemp("mainSide");
   updateAgeGuide();
   updateConversionExtras();
   updateConversions();
@@ -1063,7 +1070,7 @@ function rawRow(r) {
     masodik_adag_egyseg_eredeti: r.mainServedUnit,
     masodik_adag_konverzio: r.mainServedConversionBasis,
     masodik_homerseklet1: r.mainTempC,
-    masodik_homerseklet2: "",
+    masodik_homerseklet2: r.mainSideTempC ?? "",
     masodik_moslek: r.mainWasteKg,
     masodik_moslek_foetel: r.mainWastePrimaryKg,
     masodik_moslek_koret: r.mainWasteSideKg,
@@ -1288,6 +1295,7 @@ function bindEvents() {
 
   bindById("soupTemp", "input", () => { updateTemp("soup"); updateFinalState(); });
   bindById("mainTemp", "input", () => { updateTemp("main"); updateFinalState(); });
+  bindById("mainSideTemp", "input", () => { updateTemp("mainSide"); updateFinalState(); });
 
   ["exportFrom","exportTo","exportInstitution"].forEach(id => bindById(id, "change", updateExportCount));
   bindById("exportCsvBtn", "click", exportCsv);
@@ -1338,6 +1346,7 @@ async function init() {
   bindEvents();
   updateTemp("soup");
   updateTemp("main");
+  updateTemp("mainSide");
   updateAgeGuide();
   updateConversionExtras();
   updateConversions();
@@ -1348,7 +1357,7 @@ async function init() {
 
   if ("serviceWorker" in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js?v=2.1.0");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=2.2.0");
       await registration.update();
     } catch (err) {
       console.warn("Service worker registration failed:", err);

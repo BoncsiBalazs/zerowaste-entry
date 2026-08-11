@@ -1,10 +1,10 @@
-const CACHE_NAME = "zerowaste-entry-v2-1";
+const CACHE_NAME = "zerowaste-entry-v2-2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=2.1.0",
-  "./app.js?v=2.1.0",
-  "./data.js?v=2.1.0",
+  "./styles.css?v=2.2.0",
+  "./app.js?v=2.2.0",
+  "./data.js?v=2.2.0",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

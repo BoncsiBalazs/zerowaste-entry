@@ -9,17 +9,17 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=2.1.0">
-  <script src="./data.js?v=2.1.0"></script>
+  <link rel="stylesheet" href="./styles.css?v=2.2.0">
+  <script src="./data.js?v=2.2.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=2.1.0" defer></script>
+  <script src="./app.js?v=2.2.0" defer></script>
 </head>
 <body>
   <div id="app">
     <header class="topbar">
       <div>
         <div class="brand">ZeroWaste Entry</div>
-        <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.1</span></div>
+        <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.2</span></div>
       </div>
       <div class="status-wrap">
         <span id="networkBadge" class="badge neutral">...</span>
@@ -149,6 +149,7 @@
             <div class="card">
               <div class="section-kicker">LEVES</div>
               <h2>Érzékszervi minősítés</h2>
+              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan!</div>
               <div id="soupSensory"></div>
 
               <div class="photo-card">
@@ -165,7 +166,7 @@
               </label>
               <label class="field">
                 <span>Megjegyzés <b>*</b></span>
-                <textarea id="soupNote" rows="3" required>nincs megjegyzés</textarea>
+                <textarea id="soupNote" rows="4" placeholder="Például ételkészítési nehézségek, rendkívüli események, valami hiányzott, stb...&#10;Ha nincs, akkor írd ezt: nincs megjegyzés" required></textarea>
               </label>
             </div>
           </section>
@@ -205,11 +206,20 @@
 
               <div class="slider-block">
                 <div class="slider-head">
-                  <label for="mainTemp">Tálalási hőmérséklet <b>*</b></label>
+                  <label for="mainTemp">Főétel / főkomponens hőmérséklete <b>*</b></label>
                   <strong id="mainTempValue">65 °C</strong>
                 </div>
                 <input id="mainTemp" type="range" min="0" max="100" step="1" value="65">
                 <div id="mainTempStatus" class="temp-status warn">63–68 °C – hamarosan újramelegítendő</div>
+              </div>
+
+              <div class="slider-block">
+                <div class="slider-head">
+                  <label for="mainSideTemp">Köret hőmérséklete <b>*</b></label>
+                  <strong id="mainSideTempValue">65 °C</strong>
+                </div>
+                <input id="mainSideTemp" type="range" min="0" max="100" step="1" value="65">
+                <div id="mainSideTempStatus" class="temp-status warn">63–68 °C – hamarosan újramelegítendő</div>
               </div>
 
               <h3>Élelmiszerhulladék</h3>
@@ -250,6 +260,7 @@
             <div class="card">
               <div class="section-kicker">MÁSODIK FOGÁS</div>
               <h2>Érzékszervi minősítés</h2>
+              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan!</div>
               <div id="mainSensory"></div>
 
               <div class="photo-card">
@@ -266,7 +277,7 @@
               </label>
               <label class="field">
                 <span>Megjegyzés <b>*</b></span>
-                <textarea id="mainNote" rows="3" required>nincs megjegyzés</textarea>
+                <textarea id="mainNote" rows="4" placeholder="Például ételkészítési nehézségek, rendkívüli események, valami hiányzott, stb...&#10;Ha nincs, akkor írd ezt: nincs megjegyzés" required></textarea>
               </label>
             </div>
           </section>

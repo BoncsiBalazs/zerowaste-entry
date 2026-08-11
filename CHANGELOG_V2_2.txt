@@ -1,0 +1,11 @@
+ZeroWaste Entry v2.2
+
+- sensory útmutató bekerült a leves és második érzékszervi tábla elé;
+- sensory descriptor listából legalább egy tulajdonság kötelező minden attribútumnál;
+- az Egyéb tulajdonság továbbra is opcionális;
+- második fogás törzse újraépítve a véglegesített masodik_nev mezők és az Ételnév_javítások alapján (66 név);
+- második fogásnál külön főétel/főkomponens- és körethőmérséklet;
+- masodik_homerseklet2 exportmező a köret hőmérsékletét kapja;
+- >80 °C üzenet: „Túlságosan forró – érzékszervi?”;
+- megjegyzésmezők háttérszövege a kért példával;
+- cache verzió v2.2.

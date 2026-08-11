@@ -401,3 +401,20 @@ input[type="range"] { padding: 0; min-height: 36px; border: 0; box-shadow: none;
     border-radius: 18px 18px 0 0;
   }
 }
+
+.sensory-instruction {
+  margin: 0 0 16px;
+  padding: 14px 15px;
+  border-left: 5px solid var(--primary);
+  border-radius: 12px;
+  background: #edf7f5;
+  line-height: 1.5;
+}
+
+.descriptor-required-label {
+  margin: 2px 0 7px;
+  font-weight: 800;
+  font-size: .9rem;
+}
+.descriptor-required-label b { color: var(--danger); }
+.descriptor-required-label span { color: var(--muted); font-weight: 500; }
