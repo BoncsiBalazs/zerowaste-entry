@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "zerowaste-entry-v1";
+const CACHE_NAME = "zerowaste-entry-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

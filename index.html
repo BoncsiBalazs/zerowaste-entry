@@ -45,6 +45,13 @@
               <h2>Étkezési esemény</h2>
 
               <label class="field">
+                <span>Adatrögzítő neve <b>*</b></span>
+                <select id="recorderName" required>
+                  <option value="">Válasszon adatrögzítőt…</option>
+                </select>
+              </label>
+
+              <label class="field">
                 <span>Nap <b>*</b></span>
                 <input id="mealDate" type="date" required>
               </label>
@@ -113,7 +120,7 @@
                   <strong id="soupTempValue">65 °C</strong>
                 </div>
                 <input id="soupTemp" type="range" min="0" max="100" step="1" value="65">
-                <div id="soupTempStatus" class="temp-status good">63 °C vagy magasabb</div>
+                <div id="soupTempStatus" class="temp-status warn">63–68 °C – hamarosan újramelegítendő</div>
               </div>
 
               <h3>Élelmiszerhulladék</h3>
@@ -144,13 +151,21 @@
               <h2>Érzékszervi minősítés</h2>
               <div id="soupSensory"></div>
 
+              <div class="photo-card">
+                <label class="field">
+                  <span>Fotó a kitálalt levesről</span>
+                  <input id="soupPhoto" type="file" accept="image/*" capture="environment">
+                </label>
+                <div id="soupPhotoPreview" class="photo-preview muted">Nincs fotó kiválasztva.</div>
+              </div>
+
               <label class="field">
                 <span>Javítási javaslat <b>*</b></span>
                 <textarea id="soupImprovement" rows="3" placeholder="Ha nincs: Nincs javítási javaslat" required></textarea>
               </label>
               <label class="field">
                 <span>Megjegyzés <b>*</b></span>
-                <textarea id="soupNote" rows="3" placeholder="Ha nincs: Nincs egyéb megjegyzés" required></textarea>
+                <textarea id="soupNote" rows="3" required>nincs megjegyzés</textarea>
               </label>
             </div>
           </section>
@@ -170,23 +185,6 @@
                 <button id="mainNewDishBtn" class="secondary-btn small" type="button">Egyéb / új étel</button>
                 <span id="mainDishStatus" class="small-muted"></span>
               </div>
-              <div id="mainComponentHint" class="info-box muted"></div>
-
-              <div class="field-grid">
-                <label class="field">
-                  <span>Hús / főkomponens <b>*</b></span>
-                  <input id="mainPrimary" type="text" placeholder="Ha nincs: Nincs" required>
-                </label>
-                <label class="field">
-                  <span>Köret <b>*</b></span>
-                  <input id="mainSide" type="text" placeholder="Ha nincs: Nincs" required>
-                </label>
-                <label class="field">
-                  <span>Egyéb komponens <b>*</b></span>
-                  <input id="mainOtherComponent" type="text" placeholder="Ha nincs: Nincs" required>
-                </label>
-              </div>
-
               <div class="field-grid two">
                 <label class="field">
                   <span>Kitálalt mennyiség <b>*</b></span>
@@ -211,7 +209,7 @@
                   <strong id="mainTempValue">65 °C</strong>
                 </div>
                 <input id="mainTemp" type="range" min="0" max="100" step="1" value="65">
-                <div id="mainTempStatus" class="temp-status good">63 °C vagy magasabb</div>
+                <div id="mainTempStatus" class="temp-status warn">63–68 °C – hamarosan újramelegítendő</div>
               </div>
 
               <h3>Élelmiszerhulladék</h3>
@@ -254,13 +252,21 @@
               <h2>Érzékszervi minősítés</h2>
               <div id="mainSensory"></div>
 
+              <div class="photo-card">
+                <label class="field">
+                  <span>Fotó a kitálalt második fogásról</span>
+                  <input id="mainPhoto" type="file" accept="image/*" capture="environment">
+                </label>
+                <div id="mainPhotoPreview" class="photo-preview muted">Nincs fotó kiválasztva.</div>
+              </div>
+
               <label class="field">
                 <span>Javítási javaslat <b>*</b></span>
                 <textarea id="mainImprovement" rows="3" placeholder="Ha nincs: Nincs javítási javaslat" required></textarea>
               </label>
               <label class="field">
                 <span>Megjegyzés <b>*</b></span>
-                <textarea id="mainNote" rows="3" placeholder="Ha nincs: Nincs egyéb megjegyzés" required></textarea>
+                <textarea id="mainNote" rows="3" required>nincs megjegyzés</textarea>
               </label>
             </div>
           </section>

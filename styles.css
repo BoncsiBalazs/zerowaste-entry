@@ -202,6 +202,31 @@ input[type="range"] { padding: 0; min-height: 36px; border: 0; box-shadow: none;
 
 .temp-status.good { color: var(--ok); background: var(--ok-bg); }
 .temp-status.bad { color: var(--danger); background: var(--danger-bg); }
+.temp-status.warn { color: #8a5a00; background: #fff6d8; }
+.temp-status.hot { color: #9a3412; background: #fff0e8; }
+
+.photo-card {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.photo-preview {
+  border: 1px dashed #b8c8c5;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafcfc;
+}
+.photo-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+  object-fit: contain;
+}
 
 .sensory-card {
   border: 1px solid var(--line);

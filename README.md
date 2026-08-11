@@ -1,90 +1,47 @@
-# ZeroWaste Entry Web / PWA
+# ZeroWaste Entry Web / PWA – V2
 
-Ez a ZeroWaste Entry teljesen kliensoldali webalkalmazás. A használó telefonján vagy tabletjén fut a böngészőben; **nem kell R, RStudio vagy bekapcsolt PC**.
+Ez a ZeroWaste Entry mobil-first, teljesen kliensoldali webalkalmazás. A használó telefonján vagy tabletjén fut a böngészőben; R, RStudio vagy folyamatosan bekapcsolt PC nem szükséges.
 
-## Működés
+## V2 javítások
 
-- GitHub Pages kiszolgálja a statikus HTML/CSS/JavaScript fájlokat.
-- A beküldött mérési adatok a készülék **IndexedDB** helyi adatbázisába kerülnek.
-- A webapp PWA-ként telepíthető a telefon kezdőképernyőjére.
-- Az első sikeres betöltés után az alkalmazás alapfunkciói offline is használhatók.
-- XLSX és CSV export készíthető ZeroWaste raw struktúrában.
-- Az XLSX export intézményenként külön munkalapot készít.
+- teljes, aktuális hulladékmérési intézménytörzs került be;
+- az elején kötelező `Adatrögzítő neve` mező:
+  - Gipsz Jakab
+  - Kovács Istvánné
+  - Tóth István
+- az ételtörzs egységesítve lett:
+  - egyszerű írásmód- és szóközvariánsok összevonva;
+  - pl. `Alma leves` → `Almaleves`;
+  - `Bab leves` → `Bableves`;
+  - `Brokkolikrém leves` → `Brokkolikrémleves`;
+  - téves fogástípusba került elemek és technikai/placeholderek kiszűrve;
+- hőmérsékleti jelzés:
+  - < 63 °C: piros – `Újramelegíteni!`
+  - 63–68 °C: sárga – `Hamarosan újramelegítendő`
+  - 69–80 °C: zöld – `Megfelelő!`
+  - > 80 °C: narancs – `Túlságosan forró – érzékszervi kockázat?`
+- minden érzékszervi attribútumnál választható `Megfelelő`;
+- az érzékszervi descriptor / egyéb tulajdonság már opcionális; az 1–5 pontszám kötelező;
+- leveshez és második fogáshoz külön fotó tölthető fel;
+- a fotó a készüléken tömörítve kerül a helyi IndexedDB-adatbázisba;
+- a megjegyzés alapértéke: `nincs megjegyzés`;
+- a második fogás külön `Hús / főkomponens`, `Köret`, `Egyéb komponens` névmezői eltávolítva;
+- a komponensenkénti hulladékmérés megmaradt;
+- a raw export tartalmazza az adatrögzítő nevét és azt, hogy készült-e fotó.
 
-## Fontos adatbiztonsági korlát
+## Adattárolás
 
-A GitHub Pages nem adatbázis. A beküldött adatok **nem kerülnek fel a GitHub repositoryba**; a telefonon maradnak.
+A beküldött mérési adatok a telefon / tablet böngészőjének IndexedDB adatbázisában maradnak. A GitHub Pages csak az alkalmazás fájljait szolgálja ki.
 
-Ez az egykészülékes pilothoz megfelelő. A böngésző webhelyadatainak törlése az IndexedDB adatokat is törölheti, ezért rendszeres XLSX/CSV vagy JSON biztonsági export javasolt.
+Rendszeres ZeroWaste XLSX/CSV export vagy JSON biztonsági mentés javasolt.
 
-Ha később automatikus felhőmentés vagy több készülékes használat kell, a következő réteg egy központi adatbázis (például Supabase/PostgreSQL) lesz.
+## GitHub frissítés
 
-## GitHub Pages telepítés
+Ha már létrehoztad a GitHub Pages repositoryt:
 
-1. Hozz létre egy új GitHub repositoryt, például `zerowaste-entry`.
-2. Töltsd fel a csomag összes fájlját a repository gyökerébe.
-3. GitHub: **Settings → Pages**.
-4. A publikálási forrásnál válaszd a `main` branch gyökerét (`/ root`), vagy használj GitHub Actions Pages workflow-t.
-5. A webapp címe tipikusan:
-   `https://FELHASZNALONEV.github.io/zerowaste-entry/`
-6. Telefonon nyisd meg ezt az URL-t.
-7. Android/Chrome alatt válaszd a „Telepítés” / „Hozzáadás a kezdőképernyőhöz” lehetőséget.
+1. cseréld le a repository fájljait ennek a ZIP-nek a tartalmára;
+2. commitold a változtatásokat;
+3. várd meg a Pages új deployját;
+4. telefonon frissítsd az oldalt.
 
-## Bemeneti logika
-
-Közös beküldés:
-- dátum;
-- korosztály;
-- intézmény;
-- leves;
-- leves sensory;
-- második fogás;
-- második sensory;
-- ellenőrzés és beküldés.
-
-Minden kötelező mező validálva van. A rendszer nem enged tovább/beküldeni, ha kötelező adat vagy szükséges egységkonverziós paraméter hiányzik.
-
-## Adagolási konverzió
-
-A felhasználó megadhat:
-- kg;
-- liter;
-- darab;
-- adag.
-
-Standard ZeroWaste dimenziók:
-- leves kitálalt mennyiség → liter;
-- második fogás kitálalt mennyiség → kg;
-- visszamért hulladék → kg.
-
-Az adagolási útmutató tartományainál automatikus konverzióhoz a tartomány középértéke kerül felhasználásra. Az eredeti mennyiség, eredeti egység és a konverzió alapja is mentésre kerül.
-
-## 63 °C
-
-A hőmérséklet csúszkán rögzíthető. 63 °C alatti értéknél a felület piros figyelmeztetést mutat.
-
-## Export
-
-Az Export oldalon megadható:
-- kezdő dátum;
-- záró dátum;
-- intézmény.
-
-Kimenet:
-- `.xlsx`;
-- `.csv`;
-- teljes helyi JSON biztonsági mentés.
-
-Az XLSX/CSV oszlopai közvetlenül a ZeroWaste hulladék raw importjához igazodnak.
-
-## Reference adatok
-
-A `data.js` a korábban összeállított törzsadatokat tartalmazza:
-- korcsoportok;
-- intézmények;
-- étlap + standardizált ételnevek;
-- fogás-komponens besorolások;
-- adagolási útmutató;
-- érzékszervi descriptorok.
-
-Az alkalmazásban új intézmény és új étel is hozzáadható; ezek az adott készülék helyi adatbázisában maradnak.
+A service worker cache-neve V2-re változott, ezért az új verzió külön cache-t használ.

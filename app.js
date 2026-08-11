@@ -2,7 +2,7 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const DB_NAME = "zerowaste-entry-web";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
@@ -33,6 +33,11 @@ let deferredInstallPrompt = null;
 const sensoryState = {
   soup: {},
   main: {}
+};
+
+const photoState = {
+  soup: null,
+  main: null
 };
 
 const $ = (id) => document.getElementById(id);
@@ -173,16 +178,37 @@ function idbDelete(storeName, key) {
 
 async function seedReferenceInstitutions() {
   const current = await idbGetAll(STORE_INSTITUTIONS);
-  const names = new Set(current.map(x => x.institutionName));
+  const referenceNames = new Set(DATA.institutions.map(x => x.institution_name));
+
+  // A korábbi verzióban tévesen bekerült referencia-intézményeket
+  // eltávolítjuk, de a felhasználó által kézzel felvett intézményeket megtartjuk.
+  for (const row of current) {
+    if ((row.source === "reference" || row.source === "jelenlegi kutatási adatállomány") &&
+        !referenceNames.has(row.institutionName)) {
+      await idbDelete(STORE_INSTITUTIONS, row.institutionName);
+    }
+  }
+
+  const refreshed = await idbGetAll(STORE_INSTITUTIONS);
+  const names = new Set(refreshed.map(x => x.institutionName));
+
   for (const row of DATA.institutions) {
     if (!names.has(row.institution_name)) {
       await idbPut(STORE_INSTITUTIONS, {
         institutionName: row.institution_name,
         sheetName: row.sheet_name || makeSheetName(row.institution_name),
-        source: row.source || "reference",
+        source: "reference",
         active: true,
         createdAt: localIsoWithOffset()
       });
+    } else {
+      const existing = refreshed.find(x => x.institutionName === row.institution_name);
+      if (existing && existing.source === "reference" && existing.sheetName !== row.sheet_name) {
+        await idbPut(STORE_INSTITUTIONS, {
+          ...existing,
+          sheetName: row.sheet_name || makeSheetName(row.institution_name)
+        });
+      }
     }
   }
 }
@@ -194,6 +220,17 @@ async function populateAgeGroups() {
     const o = document.createElement("option");
     o.value = x.label;
     o.textContent = x.label;
+    sel.appendChild(o);
+  });
+}
+
+function populateRecorders() {
+  const sel = $("recorderName");
+  sel.innerHTML = `<option value="">Válasszon adatrögzítőt…</option>`;
+  (DATA.recorders || []).forEach(name => {
+    const o = document.createElement("option");
+    o.value = name;
+    o.textContent = name;
     sel.appendChild(o);
   });
 }
@@ -337,7 +374,7 @@ function renderSensory(prefix, containerId) {
 function sensoryComplete(prefix) {
   return ATTRS.every(([key]) => {
     const s = sensoryState[prefix][key];
-    return s.score !== null && (s.descriptors.length > 0 || safeText(s.other));
+    return s.score !== null;
   });
 }
 
@@ -351,7 +388,55 @@ function sensoryFlat(prefix) {
   return out;
 }
 
-/* Dish status and component hints */
+/* Photo handling – compressed locally before IndexedDB storage */
+function compressPhoto(file, maxSide = 1280, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve(null);
+    if (!file.type.startsWith("image/")) return reject(new Error("Csak képfájl tölthető fel."));
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("A fotó nem olvasható."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("A fotó nem dolgozható fel."));
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhoto(prefix, file) {
+  const preview = $(`${prefix}PhotoPreview`);
+  if (!file) {
+    photoState[prefix] = null;
+    preview.textContent = "Nincs fotó kiválasztva.";
+    return;
+  }
+
+  try {
+    preview.textContent = "Fotó feldolgozása…";
+    const dataUrl = await compressPhoto(file);
+    photoState[prefix] = dataUrl;
+    preview.innerHTML = `<img src="${dataUrl}" alt="Kitálalt étel fotója">`;
+  } catch (err) {
+    photoState[prefix] = null;
+    preview.textContent = "A fotó nem tölthető be.";
+    showToast(err.message || "Fotófeldolgozási hiba.", 4200);
+  }
+}
+
+/* Dish status */
 async function updateDishStatus(kind) {
   const course = kind === "soup" ? "Leves" : "Második fogás";
   const inputId = kind === "soup" ? "soupDish" : "mainDish";
@@ -364,25 +449,6 @@ async function updateDishStatus(kind) {
   const master = new Set(getMasterDishes(course));
   const user = new Set(await getUserDishes(course));
   $(statusId).textContent = master.has(value) || user.has(value) ? "Törzsben szereplő étel" : "Új étel – beküldéskor a helyi törzsbe kerül";
-  if (kind === "main") renderMainComponentHint();
-}
-
-function renderMainComponentHint() {
-  const dish = safeText($("mainDish").value);
-  const box = $("mainComponentHint");
-  if (!dish) {
-    box.textContent = "Válasszon vagy adjon meg egy ételt.";
-    return;
-  }
-  const comps = dishComponentsFor(dish);
-  if (!comps.length) {
-    box.textContent = "Ehhez az ételhez nincs biztos komponensbontás a törzsben. A nem releváns mezőbe írja: „Nincs”.";
-    return;
-  }
-  const names = comps
-    .map(c => DATA.portionGuide.find(g => g.portion_key === c.portion_key)?.food_element)
-    .filter(Boolean);
-  box.textContent = `Adagolási kategória-javaslat: ${[...new Set(names)].join(" + ")}. A konkrét komponensneveket ellenőrizze.`;
 }
 
 /* Unit conversion */
@@ -587,9 +653,20 @@ function updateTemp(prefix) {
   const val = Number($(`${prefix}Temp`).value);
   $(`${prefix}TempValue`).textContent = `${val} °C`;
   const status = $(`${prefix}TempStatus`);
-  const bad = val < 63;
-  status.className = `temp-status ${bad ? "bad" : "good"}`;
-  status.textContent = bad ? "63 °C alatti érték" : "63 °C vagy magasabb";
+
+  if (val < 63) {
+    status.className = "temp-status bad";
+    status.textContent = "Újramelegíteni!";
+  } else if (val <= 68) {
+    status.className = "temp-status warn";
+    status.textContent = "Hamarosan újramelegítendő";
+  } else if (val <= 80) {
+    status.className = "temp-status good";
+    status.textContent = "Megfelelő!";
+  } else {
+    status.className = "temp-status hot";
+    status.textContent = "Túlságosan forró – érzékszervi kockázat?";
+  }
 }
 
 /* Validation */
@@ -602,6 +679,7 @@ function stepErrors(stepIndex) {
   };
 
   if (stepIndex === 0) {
+    requireText("recorderName", "Adatrögzítő neve");
     requireText("mealDate", "Nap");
     requireText("ageGroup", "Korosztály");
     requireText("institution", "Intézmény");
@@ -623,9 +701,6 @@ function stepErrors(stepIndex) {
 
   if (stepIndex === 3) {
     requireText("mainDish", "Második fogás neve");
-    requireText("mainPrimary", "Hús / főkomponens");
-    requireText("mainSide", "Köret");
-    requireText("mainOtherComponent", "Egyéb komponens");
     requireNonNeg("mainServed", "Második kitálalt mennyiség", true);
     if (!convertMainServed().ok) errors.push("Második kitálalt mennyiség konverziója");
     ["mainWaste","mainWastePrimary","mainWasteSide","mainWasteOther"].forEach((id, i) =>
@@ -703,6 +778,7 @@ function renderReview() {
   $("reviewContent").innerHTML = `
     <div class="review-block">
       <h3>Alapadatok</h3>
+      ${reviewLine("Adatrögzítő", $("recorderName").value)}
       ${reviewLine("Nap", $("mealDate").value)}
       ${reviewLine("Korosztály", $("ageGroup").value)}
       ${reviewLine("Intézmény", $("institution").value)}
@@ -714,17 +790,17 @@ function renderReview() {
       ${reviewLine("Standard", sc.ok ? `${fmtNumber(sc.value,3)} L` : "nem számítható")}
       ${reviewLine("Hőmérséklet", `${$("soupTemp").value} °C`)}
       ${reviewLine("Hulladék", sw.ok ? `${fmtNumber(sw.value,3)} kg` : "nem számítható")}
+      ${reviewLine("Fotó", photoState.soup ? "rögzítve" : "nincs")}
       ${reviewLine("Érzékszervi", sensoryComplete("soup") ? "teljes" : "hiányos")}
     </div>
     <div class="review-block">
       <h3>Második fogás</h3>
       ${reviewLine("Étel", $("mainDish").value)}
-      ${reviewLine("Főkomponens", $("mainPrimary").value)}
-      ${reviewLine("Köret", $("mainSide").value)}
       ${reviewLine("Kitálalt", `${$("mainServed").value || "–"} ${$("mainServedUnit").value}`)}
       ${reviewLine("Standard", mc.ok ? `${fmtNumber(mc.value,3)} kg` : "nem számítható")}
       ${reviewLine("Hőmérséklet", `${$("mainTemp").value} °C`)}
       ${reviewLine("Hulladék", mw.ok ? `${fmtNumber(mw.values.total,3)} kg` : "nem számítható")}
+      ${reviewLine("Fotó", photoState.main ? "rögzítve" : "nincs")}
       ${reviewLine("Érzékszervi", sensoryComplete("main") ? "teljes" : "hiányos")}
     </div>
   `;
@@ -779,6 +855,7 @@ async function submitCurrent() {
 
   const row = {
     submissionId: makeSubmissionId(),
+    recorderName: $("recorderName").value,
     mealDate: $("mealDate").value,
     submittedAt: localIsoWithOffset(),
     appVersion: APP_VERSION,
@@ -810,11 +887,9 @@ async function submitCurrent() {
     soupOverallDesc: soupSens.overallDesc,
     soupImprovement: safeText($("soupImprovement").value),
     soupNote: safeText($("soupNote").value),
+    soupPhotoDataUrl: photoState.soup,
 
     mainDish: safeText($("mainDish").value),
-    mainComponentPrimary: safeText($("mainPrimary").value),
-    mainComponentSide: safeText($("mainSide").value),
-    mainComponentOther: safeText($("mainOtherComponent").value),
     mainServedOriginal: numberValue("mainServed"),
     mainServedUnit: $("mainServedUnit").value,
     mainServedStandardKg: mc.value,
@@ -841,7 +916,8 @@ async function submitCurrent() {
     mainOverall: mainSens.overall,
     mainOverallDesc: mainSens.overallDesc,
     mainImprovement: safeText($("mainImprovement").value),
-    mainNote: safeText($("mainNote").value)
+    mainNote: safeText($("mainNote").value),
+    mainPhotoDataUrl: photoState.main
   };
 
   await idbPut(STORE_SUBMISSIONS, row);
@@ -869,6 +945,10 @@ function resetEntry() {
   $("mainTemp").value = 65;
   resetSensory("soup", "soupSensory");
   resetSensory("main", "mainSensory");
+  photoState.soup = null;
+  photoState.main = null;
+  $("soupPhotoPreview").textContent = "Nincs fotó kiválasztva.";
+  $("mainPhotoPreview").textContent = "Nincs fotó kiválasztva.";
   updateTemp("soup");
   updateTemp("main");
   updateAgeGuide();
@@ -892,6 +972,7 @@ async function renderSaved() {
     <div class="record-item">
       <div class="record-title">${escapeHtml(r.mealDate)} – ${escapeHtml(r.institutionName)}</div>
       <div class="record-meta">${escapeHtml(r.ageGroupLabel)} • ${escapeHtml(r.soupDish)} / ${escapeHtml(r.mainDish)}</div>
+      <div class="record-meta">Adatrögzítő: ${escapeHtml(r.recorderName || "–")} • Fotó: ${(r.soupPhotoDataUrl || r.mainPhotoDataUrl) ? "igen" : "nem"}</div>
       <div class="record-meta">Beküldve: ${escapeHtml(r.submittedAt)}</div>
       <div class="record-actions">
         <button class="secondary-btn small delete-record" data-id="${escapeHtml(r.submissionId)}" type="button">Törlés</button>
@@ -927,6 +1008,7 @@ function rawRow(r) {
   return {
     source_sheet: r.institutionSheet,
     sorszam: r.submissionId,
+    adatrögzítő_neve: r.recorderName || "",
     intezmeny_neve: r.institutionName,
     kitoltes_datuma: r.mealDate,
     bekuldes_idopontja: r.submittedAt,
@@ -953,12 +1035,10 @@ function rawRow(r) {
     leves_osszkedv_megj: r.soupOverallDesc,
     leves_javitas: r.soupImprovement,
     leves_megjegyzes: r.soupNote,
+    leves_foto_rogzitve: r.soupPhotoDataUrl ? "igen" : "nem",
     leves_fogy_megj: "",
     leves_repeta: "",
     masodik_nev: r.mainDish,
-    masodik_foetel_nev: r.mainComponentPrimary,
-    masodik_koret_nev: r.mainComponentSide,
-    masodik_egyeb_komponens: r.mainComponentOther,
     masodik_adag: r.mainServedStandardKg,
     masodik_adag_eredeti: r.mainServedOriginal,
     masodik_adag_egyseg_eredeti: r.mainServedUnit,
@@ -983,6 +1063,7 @@ function rawRow(r) {
     masodik_osszkedv_megj: r.mainOverallDesc,
     masodik_javitas: r.mainImprovement,
     masodik_megjegyzes: r.mainNote,
+    masodik_foto_rogzitve: r.mainPhotoDataUrl ? "igen" : "nem",
     masodik_fogy_megj: "",
     masodik_repeta: ""
   };
@@ -1175,10 +1256,16 @@ function bindEvents() {
   [
     "soupServed","soupWaste","mainServed","mainWaste",
     "mainWastePrimary","mainWasteSide","mainWasteOther",
-    "mainPrimary","mainSide","mainOtherComponent",
     "soupImprovement","soupNote","mainImprovement","mainNote",
-    "mealDate","institution"
+    "recorderName","mealDate","institution"
   ].forEach(id => $(id).addEventListener("input", updateFinalState));
+
+  $("soupPhoto").addEventListener("change", async (e) => {
+    await handlePhoto("soup", e.target.files?.[0] || null);
+  });
+  $("mainPhoto").addEventListener("change", async (e) => {
+    await handlePhoto("main", e.target.files?.[0] || null);
+  });
 
   $("soupTemp").addEventListener("input", () => { updateTemp("soup"); updateFinalState(); });
   $("mainTemp").addEventListener("input", () => { updateTemp("main"); updateFinalState(); });
@@ -1212,6 +1299,7 @@ async function init() {
   db = await openDatabase();
   await seedReferenceInstitutions();
   await populateAgeGroups();
+  populateRecorders();
   await refreshInstitutionSelectors();
   await refreshDishLists();
 
