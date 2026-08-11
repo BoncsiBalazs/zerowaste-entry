@@ -2,7 +2,7 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.3.0";
 const DB_NAME = "zerowaste-entry-web";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
@@ -746,18 +746,141 @@ function allErrors() {
   return [0,1,2,3,4].flatMap(stepErrors);
 }
 
+function setFieldInvalid(id, invalid = true) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle("is-invalid", !!invalid);
+  const field = el.closest(".field");
+  if (field) field.classList.toggle("field-invalid", !!invalid);
+}
+
+function setBoxInvalid(id, invalid = true) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.toggle("box-invalid", !!invalid);
+}
+
+function markSensoryCard(prefix, key, invalid = true) {
+  const card = document.querySelector(`.sensory-card[data-prefix="${prefix}"][data-attr="${key}"]`);
+  if (card) card.classList.toggle("card-invalid", !!invalid);
+}
+
+function clearValidationHighlights() {
+  qsa(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
+  qsa(".field-invalid").forEach(el => el.classList.remove("field-invalid"));
+  qsa(".box-invalid").forEach(el => el.classList.remove("box-invalid"));
+  qsa(".card-invalid").forEach(el => el.classList.remove("card-invalid"));
+}
+
+function applyValidationHighlights() {
+  clearValidationHighlights();
+
+  const activeSteps = currentStep === 5 ? [0,1,2,3,4] : [currentStep];
+  const requireTextField = (id) => setFieldInvalid(id, !safeText($(id)?.value));
+  const requireNumberField = (id, positive = false) => {
+    const v = numberValue(id);
+    setFieldInvalid(id, Number.isNaN(v) || (positive ? v <= 0 : v < 0));
+  };
+
+  if (activeSteps.includes(0)) {
+    ["recorderName","mealDate","ageGroup","institution"].forEach(requireTextField);
+  }
+
+  if (activeSteps.includes(1)) {
+    requireTextField("soupDish");
+    requireNumberField("soupServed", true);
+    setFieldInvalid("soupServedUnit", !safeText($("soupServedUnit")?.value));
+    const sc = convertSoupServed();
+    if (!sc.ok) {
+      setFieldInvalid("soupServed", true);
+      ["soupServedDensity","soupServedMlPiece"].forEach(id => { if ($(id)) setFieldInvalid(id, true); });
+      setBoxInvalid("soupServedPreview", true);
+    }
+    requireNumberField("soupWaste", false);
+    setFieldInvalid("soupWasteUnit", !safeText($("soupWasteUnit")?.value));
+    const sw = convertSoupWaste();
+    if (!sw.ok) {
+      setFieldInvalid("soupWaste", true);
+      ["soupWasteDensity","soupWasteGPiece","soupWasteGPortion"].forEach(id => { if ($(id)) setFieldInvalid(id, true); });
+      setBoxInvalid("soupWastePreview", true);
+    }
+  }
+
+  if (activeSteps.includes(2)) {
+    ATTRS.forEach(([key]) => {
+      const s = sensoryState.soup[key];
+      markSensoryCard("soup", key, !(s && s.score !== null && s.descriptors.length > 0));
+    });
+    requireTextField("soupImprovement");
+    requireTextField("soupNote");
+  }
+
+  if (activeSteps.includes(3)) {
+    requireTextField("mainDish");
+    requireNumberField("mainServed", true);
+    setFieldInvalid("mainServedUnit", !safeText($("mainServedUnit")?.value));
+    const mc = convertMainServed();
+    if (!mc.ok) {
+      setFieldInvalid("mainServed", true);
+      ["mainServedDensity","mainServedGPiece","mainServedManualGPortion"].forEach(id => { if ($(id)) setFieldInvalid(id, true); });
+      setBoxInvalid("mainServedPreview", true);
+    }
+    ["mainWaste","mainWastePrimary","mainWasteSide","mainWasteOther"].forEach(id => requireNumberField(id, false));
+    setFieldInvalid("mainWasteUnit", !safeText($("mainWasteUnit")?.value));
+    const mw = convertMainWaste();
+    if (!mw.ok) {
+      ["mainWaste","mainWastePrimary","mainWasteSide","mainWasteOther"].forEach(id => setFieldInvalid(id, true));
+      ["mainWasteDensity","mainWasteGPiece","mainWasteGPortion"].forEach(id => { if ($(id)) setFieldInvalid(id, true); });
+      setBoxInvalid("mainWastePreview", true);
+    }
+    if (mw.ok && !mw.componentValid) {
+      ["mainWaste","mainWastePrimary","mainWasteSide","mainWasteOther"].forEach(id => setFieldInvalid(id, true));
+      setBoxInvalid("mainWastePreview", true);
+    }
+  }
+
+  if (activeSteps.includes(4)) {
+    ATTRS.forEach(([key]) => {
+      const s = sensoryState.main[key];
+      markSensoryCard("main", key, !(s && s.score !== null && s.descriptors.length > 0));
+    });
+    requireTextField("mainImprovement");
+    requireTextField("mainNote");
+  }
+}
+
+function updateStepValidationBox() {
+  const box = $("stepValidation");
+  if (!box) return;
+  const errors = currentStep === 5 ? allErrors() : stepErrors(currentStep);
+  if (errors.length === 0) {
+    box.className = "validation-strip ok";
+    box.innerHTML = currentStep === 5
+      ? "<strong>Beküldésre kész.</strong> Minden kötelező mező ki van töltve."
+      : "<strong>Rendben.</strong> Ezen az oldalon minden kötelező adat megvan.";
+  } else {
+    box.className = "validation-strip bad";
+    box.innerHTML = `<strong>Hiányos mezők ezen az oldalon:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+  }
+}
+
 function updateFinalState() {
   if (currentStep === 5) renderReview();
   const errors = allErrors();
-  $("submitBtn").disabled = errors.length > 0;
+  const submitBtn = $("submitBtn");
+  if (submitBtn) submitBtn.disabled = errors.length > 0;
   const box = $("finalValidation");
-  if (errors.length === 0) {
-    box.className = "validation-box ok";
-    box.textContent = "Minden kötelező mező megfelelően ki van töltve.";
-  } else {
-    box.className = "validation-box bad";
-    box.innerHTML = `<strong>A beküldéshez még szükséges:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+  if (box) {
+    if (errors.length === 0) {
+      box.className = "validation-box ok";
+      box.textContent = "Minden kötelező mező megfelelően ki van töltve.";
+    } else {
+      box.className = "validation-box bad";
+      box.innerHTML = `<strong>A beküldéshez még szükséges:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join("")}</ul>`;
+    }
   }
+  applyValidationHighlights();
+  updateStepValidationBox();
 }
 
 function goToStep(next) {
@@ -765,6 +888,8 @@ function goToStep(next) {
   if (next > currentStep) {
     const errors = stepErrors(currentStep);
     if (errors.length) {
+      applyValidationHighlights();
+      updateStepValidationBox();
       showToast(`Hiányos: ${errors.join(", ")}`, 4200);
       return;
     }
@@ -777,6 +902,7 @@ function goToStep(next) {
   $("prevBtn").style.visibility = currentStep === 0 ? "hidden" : "visible";
   $("nextBtn").classList.toggle("hidden", currentStep === 5);
   if (currentStep === 5) renderReview();
+  updateFinalState();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1283,8 +1409,8 @@ function bindEvents() {
     "soupServed","soupWaste","mainServed","mainWaste",
     "mainWastePrimary","mainWasteSide","mainWasteOther",
     "soupImprovement","soupNote","mainImprovement","mainNote",
-    "recorderName","mealDate","institution"
-  ].forEach(id => bindById(id, "input", updateFinalState));
+    "recorderName","mealDate","institution","ageGroup","soupDish","mainDish"
+  ].forEach(id => { bindById(id, "input", updateFinalState); bindById(id, "change", updateFinalState); });
 
   bindById("soupPhoto", "change", async (e) => {
     await handlePhoto("soup", e.target.files?.[0] || null);
@@ -1354,6 +1480,7 @@ async function init() {
   await renderSaved();
   await updateExportCount();
   goToStep(0);
+  updateFinalState();
 
   if ("serviceWorker" in navigator) {
     try {

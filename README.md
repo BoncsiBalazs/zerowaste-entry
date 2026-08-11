@@ -1,3 +1,5 @@
+Version: 2.3
+
 # ZeroWaste Entry Web / PWA – V2
 
 Ez a ZeroWaste Entry mobil-first, teljesen kliensoldali webalkalmazás. A használó telefonján vagy tabletjén fut a böngészőben; R, RStudio vagy folyamatosan bekapcsolt PC nem szükséges.

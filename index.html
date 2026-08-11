@@ -9,17 +9,20 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=2.2.0">
-  <script src="./data.js?v=2.2.0"></script>
+  <link rel="stylesheet" href="./styles.css?v=2.3.0">
+  <script src="./data.js?v=2.3.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=2.2.0" defer></script>
+  <script src="./app.js?v=2.3.0" defer></script>
 </head>
 <body>
   <div id="app">
     <header class="topbar">
-      <div>
-        <div class="brand">ZeroWaste Entry</div>
-        <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.2</span></div>
+      <div class="brand-wrap">
+        <img class="brand-logo" src="./logo.png" alt="ZeroWaste Entry logó">
+        <div class="brand-text">
+          <div class="brand">ZeroWaste Entry</div>
+          <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.3</span></div>
+        </div>
       </div>
       <div class="status-wrap">
         <span id="networkBadge" class="badge neutral">...</span>
@@ -37,6 +40,16 @@
           </div>
           <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
         </div>
+
+        <div class="hero-card">
+          <div class="hero-icon-wrap"><img src="./logo.png" alt="ZeroWaste Entry embléma" class="hero-logo"></div>
+          <div>
+            <div class="hero-title">Gyors, vizuális és strukturált adatfelvétel</div>
+            <div class="hero-text">A kötelező vagy hiányos mezők automatikusan színnel kiemelve jelennek meg. Az alkalmazás segít a hibák gyors felismerésében és a ZeroWaste-kompatibilis adatrögzítésben.</div>
+          </div>
+        </div>
+
+        <div id="stepValidation" class="validation-strip"></div>
 
         <form id="entryForm" novalidate>
           <!-- STEP 1 -->
@@ -149,7 +162,7 @@
             <div class="card">
               <div class="section-kicker">LEVES</div>
               <h2>Érzékszervi minősítés</h2>
-              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan!</div>
+              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan! A tulajdonságot a <strong>„Hozzáad”</strong> gombra kattintva lehet rögzíteni.</div>
               <div id="soupSensory"></div>
 
               <div class="photo-card">
@@ -260,7 +273,7 @@
             <div class="card">
               <div class="section-kicker">MÁSODIK FOGÁS</div>
               <h2>Érzékszervi minősítés</h2>
-              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan!</div>
+              <div class="sensory-instruction"><strong>Mit pontozz?</strong> Megjelenés (hogy néz ki), illat, íz és állag (milyen rágni, nem túl kemény vagy túl híg-e). Alapvetően 5 pontot kell adni, ha a tulajdonság az adott étel sajátos alapanyagából vagy technológiájából adódik (például a zöldborsófőzeléknél a zöld szín szerencsés, de a tojáslevesnél már nem). Nincs jó vagy rossz válasz, így legyél őszinte nyugodtan! A tulajdonságot a <strong>„Hozzáad”</strong> gombra kattintva lehet rögzíteni.</div>
               <div id="mainSensory"></div>
 
               <div class="photo-card">

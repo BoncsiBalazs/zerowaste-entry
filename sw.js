@@ -1,4 +1,4 @@
-const CACHE_NAME = "zerowaste-entry-v2-2";
+const CACHE_NAME = "zerowaste-entry-v2-3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,7 +7,8 @@ const APP_SHELL = [
   "./data.js?v=2.2.0",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./logo.png"
 ];
 
 self.addEventListener("install", event => {
