@@ -943,6 +943,8 @@ function goToStep(next) {
   }
   currentStep = next;
   qsa(".step").forEach((el, i) => el.classList.toggle("active", i === currentStep));
+  const observationIntro = $("observationIntro");
+  if (observationIntro) observationIntro.classList.toggle("hidden", currentStep !== 0);
   $("stepTitle").textContent = stepTitles[currentStep];
   $("stepCounter").textContent = `${currentStep + 1} / 6`;
   $("progressBar").style.width = `${((currentStep + 1) / 6) * 100}%`;
