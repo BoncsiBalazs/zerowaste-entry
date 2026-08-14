@@ -9,10 +9,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=2.3.0">
-  <script src="./data.js?v=2.3.0"></script>
+  <link rel="stylesheet" href="./styles.css?v=2.5.0">
+  <script src="./data.js?v=2.5.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=2.3.0" defer></script>
+  <script src="./app.js?v=2.5.0" defer></script>
 </head>
 <body>
   <div id="app">
@@ -21,7 +21,7 @@
         <img class="brand-logo" src="./logo.png" alt="ZeroWaste Entry logó">
         <div class="brand-text">
           <div class="brand">ZeroWaste Entry</div>
-          <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.3</span></div>
+          <div class="subtitle">Digitális közétkeztetési adatgyűjtő <span class="app-version">v2.4</span></div>
         </div>
       </div>
       <div class="status-wrap">
@@ -350,12 +350,13 @@
           </label>
           <div id="exportCount" class="info-box">0 exportálható rekord</div>
           <div class="button-stack">
-            <button id="exportXlsxBtn" class="primary-btn" type="button">XLSX – ZeroWaste raw</button>
+            <button id="exportZipBtn" class="primary-btn" type="button">ZIP – adatok + ételfotók</button>
+            <button id="exportXlsxBtn" class="secondary-btn" type="button">XLSX – ZeroWaste raw</button>
             <button id="exportCsvBtn" class="secondary-btn" type="button">CSV – ZeroWaste raw</button>
             <button id="backupJsonBtn" class="secondary-btn" type="button">Helyi biztonsági mentés (JSON)</button>
           </div>
           <p class="small-muted">
-            Az XLSX intézményenként külön munkalapot készít. A standard mennyiségek: leves = liter, második fogás = kg, hulladék = kg.
+            A ZIP a ZeroWaste Shiny számára készül: entry_events.csv + entry_media.csv + manifest.json + photos/ mappa. A fotók az eseményazonosítóval kapcsolódnak a mérési rekordhoz. Az XLSX intézményenként külön munkalapot készít.
           </p>
         </div>
       </section>

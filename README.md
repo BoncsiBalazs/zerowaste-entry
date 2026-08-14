@@ -56,3 +56,8 @@ A service worker cache-neve V2-re változott, ezért az új verzió külön cach
 - külön főétel/főkomponens- és körethőmérséklet;
 - kért megjegyzés-placeholder;
 - v2.2 cache-frissítés.
+
+## 2.5 – ételfotók fájlneve
+A ZIP exportban a fotók fájlneve tartalmazza a dátumot, az étel nevét és az intézményt:
+`YYYY-MM-DD_etelnev_intezmeny_course.jpg`.
+Az `entry_event_id` továbbra is megmarad az eseményhez kötéshez.

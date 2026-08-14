@@ -1,0 +1,8 @@
+ZeroWaste Entry 2.4.0 – eseményhez kötött médiaexport
+
+- Új ZIP export: entry_events.csv, entry_media.csv, manifest.json és photos/
+- Stabil entry_event_id minden exportált eseményhez.
+- A leves- és másodikfogás-fotók az entry_media.csv alapján kapcsolódnak az eseményhez.
+- A ZIP kliensoldalon, külső ZIP-könyvtár nélkül készül.
+- A meglévő CSV/XLSX export és JSON biztonsági mentés változatlanul megmarad.
+- A fotók továbbra is helyben tömörítve kerülnek az IndexedDB-be.

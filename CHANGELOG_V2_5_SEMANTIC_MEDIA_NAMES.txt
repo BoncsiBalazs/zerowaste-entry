@@ -1,0 +1,8 @@
+ZeroWaste Entry 2.5.0 – szemantikus ételfotó-fájlnevek
+
+- A ZIP-be kerülő ételfotók fájlneve tartalmazza a mérési dátumot, az étel nevét és az intézmény nevét.
+- Formátum: YYYY-MM-DD_etelnev_intezmeny_course.jpg
+- A fájlnév fájlrendszer-biztos, ékezet nélküli alakban készül.
+- Az eseményazonosító továbbra is külön mappaszinten és az entry_media.csv-ben is megmarad.
+- Az entry_media.csv új metaadatai: meal_date, dish_name, institution_name.
+- A korábbi CSV/XLSX/JSON exportok működése változatlan.

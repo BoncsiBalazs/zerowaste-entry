@@ -2,7 +2,7 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "2.3.0";
+const APP_VERSION = "2.5.0";
 const DB_NAME = "zerowaste-entry-web";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
@@ -1159,6 +1159,7 @@ async function filteredExportRows() {
 function rawRow(r) {
   return {
     source_sheet: r.institutionSheet,
+    entry_event_id: r.submissionId,
     sorszam: r.submissionId,
     adatrögzítő_neve: r.recorderName || "",
     intezmeny_neve: r.institutionName,
@@ -1253,6 +1254,219 @@ async function exportCsv() {
   ].join("\r\n");
   downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }),
     `raw_élelmiszerhulladék_${$("exportFrom").value}_${$("exportTo").value}.csv`);
+}
+
+
+/* ------------------------------------------------------------------
+ * ZeroWaste Entry exportcsomag (ZIP)
+ *
+ * A ZIP tárolási (store) móddal készül, külső JavaScript-könyvtár nélkül.
+ * A JPEG-képek eleve tömörítettek, ezért a ZIP-deflate itt nem adna
+ * számottevő előnyt. Az entry_event_id stabilan összeköti az adatot és
+ * a hozzá tartozó médiát.
+ * ------------------------------------------------------------------ */
+
+function utf8Bytes(text) {
+  return new TextEncoder().encode(String(text ?? ""));
+}
+
+function dataUrlToBytes(dataUrl) {
+  const raw = String(dataUrl || "");
+  const comma = raw.indexOf(",");
+  if (comma < 0) throw new Error("Érvénytelen fotó-adatformátum.");
+  const meta = raw.slice(0, comma);
+  const payload = raw.slice(comma + 1);
+  if (/;base64/i.test(meta)) {
+    const binary = atob(payload);
+    const out = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
+    return out;
+  }
+  return utf8Bytes(decodeURIComponent(payload));
+}
+
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i += 1) c = CRC32_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function dosDateTime(date = new Date()) {
+  const year = Math.max(1980, date.getFullYear());
+  const time = ((date.getHours() & 0x1F) << 11) |
+    ((date.getMinutes() & 0x3F) << 5) |
+    ((Math.floor(date.getSeconds() / 2)) & 0x1F);
+  const day = ((year - 1980) << 9) |
+    (((date.getMonth() + 1) & 0x0F) << 5) |
+    (date.getDate() & 0x1F);
+  return { time, day };
+}
+
+function concatBytes(parts) {
+  const size = parts.reduce((sum, x) => sum + x.length, 0);
+  const out = new Uint8Array(size);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
+function u16(n) {
+  const b = new Uint8Array(2);
+  new DataView(b.buffer).setUint16(0, n & 0xFFFF, true);
+  return b;
+}
+
+function u32(n) {
+  const b = new Uint8Array(4);
+  new DataView(b.buffer).setUint32(0, n >>> 0, true);
+  return b;
+}
+
+function makeStoreZip(entries) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  const dt = dosDateTime(new Date());
+
+  for (const entry of entries) {
+    const nameBytes = utf8Bytes(entry.name.replaceAll("\\", "/"));
+    const dataBytes = entry.bytes instanceof Uint8Array ? entry.bytes : utf8Bytes(entry.bytes);
+    const crc = crc32(dataBytes);
+    const flags = 0x0800; // UTF-8 fájlnév
+
+    const localHeader = concatBytes([
+      u32(0x04034b50), u16(20), u16(flags), u16(0), u16(dt.time), u16(dt.day),
+      u32(crc), u32(dataBytes.length), u32(dataBytes.length),
+      u16(nameBytes.length), u16(0), nameBytes
+    ]);
+
+    localParts.push(localHeader, dataBytes);
+
+    const centralHeader = concatBytes([
+      u32(0x02014b50), u16(20), u16(20), u16(flags), u16(0), u16(dt.time), u16(dt.day),
+      u32(crc), u32(dataBytes.length), u32(dataBytes.length),
+      u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes
+    ]);
+    centralParts.push(centralHeader);
+    offset += localHeader.length + dataBytes.length;
+  }
+
+  const central = concatBytes(centralParts);
+  const end = concatBytes([
+    u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length),
+    u32(central.length), u32(offset), u16(0)
+  ]);
+  return new Blob([concatBytes([...localParts, central, end])], { type: "application/zip" });
+}
+
+function rowsToSemicolonCsv(rows) {
+  if (!rows.length) return "\ufeff";
+  const headers = Object.keys(rows[0]);
+  return "\ufeff" + [
+    headers.map(csvEscape).join(";"),
+    ...rows.map(r => headers.map(h => csvEscape(r[h])).join(";"))
+  ].join("\r\n");
+}
+
+function safePathSegment(x, fallback = "event") {
+  return String(x ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_.-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || fallback;
+}
+
+function semanticPhotoFilename(row, courseKey, dishName) {
+  const datePart = safePathSegment(row.mealDate, "datum_nelkul");
+  const dishPart = safePathSegment(dishName, courseKey === "soup" ? "leves" : "masodik_fogas");
+  const institutionPart = safePathSegment(row.institutionName, "ismeretlen_intezmeny");
+  return `${datePart}_${dishPart}_${institutionPart}_${courseKey}.jpg`;
+}
+
+async function exportEntryPackage() {
+  const sourceRows = await filteredExportRows();
+  if (!sourceRows.length) return showToast("Nincs exportálható adat.");
+
+  const eventRows = sourceRows.map(rawRow);
+  const mediaRows = [];
+  const zipEntries = [];
+
+  for (const r of sourceRows) {
+    const eventId = r.submissionId;
+    const eventFolder = safePathSegment(eventId);
+
+    const addPhoto = (courseKey, courseLabel, dishName, dataUrl) => {
+      if (!dataUrl) return;
+      const baseFilename = semanticPhotoFilename(r, courseKey, dishName);
+      const filename = `photos/${eventFolder}/${baseFilename}`;
+      const photoId = `${eventId}__${courseKey}__served`;
+      mediaRows.push({
+        photo_id: photoId,
+        entry_event_id: eventId,
+        course: courseLabel,
+        photo_role: "served",
+        meal_date: r.mealDate || "",
+        dish_name: dishName || "",
+        institution_name: r.institutionName || "",
+        filename,
+        stored_at: r.submittedAt || "",
+        app_version: r.appVersion || APP_VERSION
+      });
+      zipEntries.push({ name: filename, bytes: dataUrlToBytes(dataUrl) });
+    };
+
+    addPhoto("soup", "Leves", r.soupDish, r.soupPhotoDataUrl);
+    addPhoto("main", "Második fogás", r.mainDish, r.mainPhotoDataUrl);
+  }
+
+  const from = $("exportFrom").value || "all";
+  const to = $("exportTo").value || "all";
+  const manifest = {
+    package_type: "zerowaste-entry-package",
+    schema_version: 1,
+    entry_app: "ZeroWaste Entry Web",
+    entry_app_version: APP_VERSION,
+    exported_at: localIsoWithOffset(),
+    filters: {
+      from_date: $("exportFrom").value || null,
+      to_date: $("exportTo").value || null,
+      institution: $("exportInstitution").value || null
+    },
+    event_count: eventRows.length,
+    media_count: mediaRows.length,
+    files: ["entry_events.csv", "entry_media.csv", "manifest.json", "photos/"]
+  };
+
+  const mediaCsv = mediaRows.length
+    ? rowsToSemicolonCsv(mediaRows)
+    : "\ufeffphoto_id;entry_event_id;course;photo_role;meal_date;dish_name;institution_name;filename;stored_at;app_version\r\n";
+
+  zipEntries.unshift(
+    { name: "manifest.json", bytes: utf8Bytes(JSON.stringify(manifest, null, 2)) },
+    { name: "entry_media.csv", bytes: utf8Bytes(mediaCsv) },
+    { name: "entry_events.csv", bytes: utf8Bytes(rowsToSemicolonCsv(eventRows)) }
+  );
+
+  showToast("Exportcsomag készítése…", 1800);
+  const blob = makeStoreZip(zipEntries);
+  downloadBlob(blob, `ZeroWaste_Entry_package_${from}_${to}.zip`);
+  showToast(`ZIP export elkészült: ${eventRows.length} esemény, ${mediaRows.length} fotó.`, 4200);
 }
 
 function makeSheetName(name) {
@@ -1426,6 +1640,7 @@ function bindEvents() {
   ["exportFrom","exportTo","exportInstitution"].forEach(id => bindById(id, "change", updateExportCount));
   bindById("exportCsvBtn", "click", exportCsv);
   bindById("exportXlsxBtn", "click", exportXlsx);
+  bindById("exportZipBtn", "click", exportEntryPackage);
   bindById("backupJsonBtn", "click", backupJson);
   bindById("addInstitutionBtn", "click", addInstitution);
   bindById("guideSearch", "input", renderGuide);
