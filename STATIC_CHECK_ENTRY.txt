@@ -1,0 +1,10 @@
+Adatrögzítő modul – statikus ellenőrzés
+
+- JavaScript szintaxis: OK (node --check)
+- Intézménytörzs: 7 aktuális intézmény
+- Ételtörzs: 182 egyedi ételnév
+- CATA-jellemzők: Külső 37; Illat 37; Íz 40; Állomány 40; Összkedveltség 40
+- „Megfelelő” csak 5 pontos értékelésnél választható
+- Tizedesvessző bevitel és CSV-export támogatott
+- ZIP-séma: entry_events.csv + entry_media.csv + manifest.json + photos/
+- Adatrögzítő neve: entry_events.csv exportban szerepel

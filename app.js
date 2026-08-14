@@ -2,7 +2,7 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "2.5.0";
+const APP_VERSION = "3.0.0";
 const DB_NAME = "zerowaste-entry-web";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
@@ -47,7 +47,7 @@ const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
 function bindById(id, eventName, handler) {
   const el = $(id);
   if (!el) {
-    console.warn(`[ZeroWaste Entry] Hiányzó UI-elem: #${id}; esemény: ${eventName}`);
+    console.warn(`[Adatrögzítő modul] Hiányzó UI-elem: #${id}; esemény: ${eventName}`);
     return false;
   }
   el.addEventListener(eventName, handler);
@@ -56,7 +56,7 @@ function bindById(id, eventName, handler) {
 
 function bindElement(el, eventName, handler, label = "dinamikus elem") {
   if (!el) {
-    console.warn(`[ZeroWaste Entry] Hiányzó ${label}; esemény: ${eventName}`);
+    console.warn(`[Adatrögzítő modul] Hiányzó ${label}; esemény: ${eventName}`);
     return false;
   }
   el.addEventListener(eventName, handler);
@@ -94,10 +94,17 @@ function safeText(x) {
   return String(x ?? "").trim();
 }
 
+function parseDecimal(value) {
+  const raw = String(value ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+  if (!raw) return NaN;
+  const x = Number(raw);
+  return Number.isFinite(x) ? x : NaN;
+}
+
 function numberValue(id) {
-  const raw = $(id).value;
-  if (raw === "") return NaN;
-  return Number(raw);
+  const el = $(id);
+  if (!el) return NaN;
+  return parseDecimal(el.value);
 }
 
 function selectedAge() {
@@ -113,9 +120,10 @@ async function getUserDishes(course) {
   return rows.filter(x => x.course === course).map(x => x.dishName);
 }
 
-function descriptorOptions(attribute) {
+function descriptorOptions(attribute, score = null) {
   return DATA.sensoryDescriptors
     .filter(x => x.attribute === attribute)
+    .filter(x => x.descriptor !== "Megfelelő" || Number(score) === 5)
     .map(x => x.descriptor);
 }
 
@@ -244,14 +252,7 @@ async function populateAgeGroups() {
 }
 
 function populateRecorders() {
-  const sel = $("recorderName");
-  sel.innerHTML = `<option value="">Válasszon adatrögzítőt…</option>`;
-  (DATA.recorders || []).forEach(name => {
-    const o = document.createElement("option");
-    o.value = name;
-    o.textContent = name;
-    sel.appendChild(o);
-  });
+  // Az adatrögzítő neve szabad szöveges mező: nincs előre rögzített névlista.
 }
 
 async function refreshInstitutionSelectors() {
@@ -303,7 +304,7 @@ function renderSensory(prefix, containerId) {
   container.innerHTML = "";
 
   for (const [key, label] of ATTRS) {
-    sensoryState[prefix][key] = { score: null, descriptors: [], other: "" };
+    sensoryState[prefix][key] = { score: null, descriptors: [] };
     const listId = `${prefix}-${key}-descriptor-list`;
 
     const card = document.createElement("div");
@@ -315,37 +316,38 @@ function renderSensory(prefix, containerId) {
       <div class="score-row" aria-label="${label} pontszám">
         ${[1,2,3,4,5].map(n => `<button class="score-btn" data-score="${n}" type="button">${n}</button>`).join("")}
       </div>
-      <div class="descriptor-required-label">Tulajdonság <b>*</b> <span>– legalább egyet válasszon</span></div>
+      <div class="sensory-rule-note">5 pontnál a „Megfelelő” válasz is jelölhető; 1–4 pontnál csak hibajellemzők választhatók.</div>
+      <div class="descriptor-required-label">CATA-tulajdonság(ok) <b>*</b> <span>– jelölje az összes megfelelőt</span></div>
       <div class="descriptor-row">
-        <input class="descriptor-input" list="${listId}" placeholder="Tulajdonság keresése…">
+        <input class="descriptor-input" list="${listId}" placeholder="Először válasszon a listából…" autocomplete="off">
         <button class="secondary-btn add-desc-btn" type="button">Hozzáad</button>
       </div>
-      <datalist id="${listId}">
-        ${descriptorOptions(label).filter(x => x !== "Egyéb").map(x => `<option value="${escapeHtml(x)}"></option>`).join("")}
-      </datalist>
+      <datalist id="${listId}"></datalist>
       <div class="chips"></div>
       <button class="secondary-btn small add-other-btn" type="button">Egyéb tulajdonság</button>
-      <input class="other-descriptor hidden" type="text" placeholder="Egyéb tulajdonság szabadon">
+      <div class="descriptor-row other-row hidden">
+        <input class="other-descriptor" type="text" placeholder="Csak akkor adja meg, ha nincs a listában">
+        <button class="secondary-btn add-other-confirm-btn" type="button">Hozzáad</button>
+      </div>
     `;
     container.appendChild(card);
 
-    qsa(".score-btn", card).forEach(btn => {
-      btn.addEventListener("click", () => {
-        qsa(".score-btn", card).forEach(b => b.classList.remove("selected"));
-        btn.classList.add("selected");
-        sensoryState[prefix][key].score = Number(btn.dataset.score);
-        updateFinalState();
-      });
-    });
-
     const descriptorInput = qs(".descriptor-input", card);
+    const descriptorList = document.getElementById(listId);
     const chips = qs(".chips", card);
+    const otherRow = qs(".other-row", card);
     const otherInput = qs(".other-descriptor", card);
+
+    function refreshDescriptorList() {
+      const score = sensoryState[prefix][key].score;
+      descriptorList.innerHTML = descriptorOptions(label, score)
+        .map(x => `<option value="${escapeHtml(x)}"></option>`).join("");
+    }
 
     function renderChips() {
       const st = sensoryState[prefix][key];
       chips.innerHTML = st.descriptors.map((d, i) =>
-        `<span class="chip">${escapeHtml(d)}<button type="button" data-i="${i}">×</button></span>`
+        `<span class="chip">${escapeHtml(d)}<button type="button" data-i="${i}" aria-label="${escapeHtml(d)} törlése">×</button></span>`
       ).join("");
       qsa(".chip button", chips).forEach(btn => {
         btn.addEventListener("click", () => {
@@ -356,12 +358,34 @@ function renderSensory(prefix, containerId) {
       });
     }
 
+    qsa(".score-btn", card).forEach(btn => {
+      btn.addEventListener("click", () => {
+        qsa(".score-btn", card).forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        const score = Number(btn.dataset.score);
+        const st = sensoryState[prefix][key];
+        st.score = score;
+        if (score !== 5 && st.descriptors.includes("Megfelelő")) {
+          st.descriptors = st.descriptors.filter(x => x !== "Megfelelő");
+          showToast("A „Megfelelő” jellemző csak 5 pontos értékelésnél használható.", 3600);
+        }
+        refreshDescriptorList();
+        renderChips();
+        updateFinalState();
+      });
+    });
+
     bindElement(qs(".add-desc-btn", card), "click", () => {
       const value = safeText(descriptorInput.value);
       if (!value) return;
-      const allowed = new Set(descriptorOptions(label).filter(x => x !== "Egyéb"));
+      const score = sensoryState[prefix][key].score;
+      if (score === null) {
+        showToast("Először adja meg az érzékszervi pontszámot.", 3400);
+        return;
+      }
+      const allowed = new Set(descriptorOptions(label, score));
       if (!allowed.has(value)) {
-        showToast("Válasszon a felajánlott tulajdonságok közül, vagy használja az „Egyéb tulajdonság” gombot.", 4200);
+        showToast("Először válasszon a felajánlott CATA-listából. Ha nincs megfelelő jellemző, használja az „Egyéb tulajdonság” lehetőséget.", 4600);
         return;
       }
       const st = sensoryState[prefix][key];
@@ -379,15 +403,38 @@ function renderSensory(prefix, containerId) {
     });
 
     bindElement(qs(".add-other-btn", card), "click", () => {
-      otherInput.classList.toggle("hidden");
-      if (!otherInput.classList.contains("hidden")) otherInput.focus();
+      otherRow.classList.toggle("hidden");
+      if (!otherRow.classList.contains("hidden")) otherInput.focus();
+    });
+
+    bindElement(qs(".add-other-confirm-btn", card), "click", () => {
+      const value = safeText(otherInput.value);
+      if (!value) return;
+      const score = sensoryState[prefix][key].score;
+      if (score === null) {
+        showToast("Először adja meg az érzékszervi pontszámot.", 3400);
+        return;
+      }
+      if (value.toLocaleLowerCase("hu") === "megfelelő" && score !== 5) {
+        showToast("A „Megfelelő” jellemző csak 5 pontos értékelésnél adható meg.", 3800);
+        return;
+      }
+      const st = sensoryState[prefix][key];
+      if (!st.descriptors.includes(value)) st.descriptors.push(value);
+      otherInput.value = "";
+      otherRow.classList.add("hidden");
+      renderChips();
       updateFinalState();
     });
 
-    bindElement(otherInput, "input", () => {
-      sensoryState[prefix][key].other = safeText(otherInput.value);
-      updateFinalState();
+    bindElement(otherInput, "keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        qs(".add-other-confirm-btn", card).click();
+      }
     });
+
+    refreshDescriptorList();
   }
 }
 
@@ -405,7 +452,7 @@ function sensoryFlat(prefix) {
   for (const [key] of ATTRS) {
     const s = sensoryState[prefix][key];
     out[key] = s.score;
-    out[`${key}Desc`] = [...s.descriptors, ...(safeText(s.other) ? [safeText(s.other)] : [])].join(" | ");
+    out[`${key}Desc`] = [...s.descriptors].join(" | ");
   }
   return out;
 }
@@ -483,7 +530,7 @@ function renderExtraField(containerId, type, id, label, defaultValue = "") {
   box.innerHTML = `
     <label class="field">
       <span>${label} <b>*</b></span>
-      <input id="${id}" type="number" min="0.0001" step="0.01" inputmode="decimal" value="${defaultValue}">
+      <input id="${id}" type="text" inputmode="decimal" autocomplete="off" placeholder="pl. 1,0" value="${String(defaultValue).replace(".", ",")}">
     </label>
   `;
   bindById(id, "input", updateConversions);
@@ -538,7 +585,7 @@ function updateConversionExtras() {
 function inputNumIfExists(id) {
   const el = $(id);
   if (!el || el.value === "") return NaN;
-  return Number(el.value);
+  return parseDecimal(el.value);
 }
 
 function convertSoupServed() {
@@ -657,16 +704,16 @@ function convertMainWaste() {
 
 function updateConversions() {
   const sc = convertSoupServed();
-  $("soupServedPreview").innerHTML = `<strong>ZeroWaste standard:</strong> ${sc.ok ? `${fmtNumber(sc.value,3)} L` : "nem számítható"}<br><small>${escapeHtml(sc.basis)}</small>`;
+  $("soupServedPreview").innerHTML = `<strong>Egységesített mennyiség:</strong> ${sc.ok ? `${fmtNumber(sc.value,3)} L` : "nem számítható"}<br><small>${escapeHtml(sc.basis)}</small>`;
 
   const mc = convertMainServed();
-  $("mainServedPreview").innerHTML = `<strong>ZeroWaste standard:</strong> ${mc.ok ? `${fmtNumber(mc.value,3)} kg` : "nem számítható"}<br><small>${escapeHtml(mc.basis)}</small>`;
+  $("mainServedPreview").innerHTML = `<strong>Egységesített mennyiség:</strong> ${mc.ok ? `${fmtNumber(mc.value,3)} kg` : "nem számítható"}<br><small>${escapeHtml(mc.basis)}</small>`;
 
   const sw = convertSoupWaste();
-  $("soupWastePreview").innerHTML = `<strong>ZeroWaste standard:</strong> ${sw.ok ? `${fmtNumber(sw.value,3)} kg` : "nem számítható"}<br><small>${escapeHtml(sw.basis)}</small>`;
+  $("soupWastePreview").innerHTML = `<strong>Egységesített mennyiség:</strong> ${sw.ok ? `${fmtNumber(sw.value,3)} kg` : "nem számítható"}<br><small>${escapeHtml(sw.basis)}</small>`;
 
   const mw = convertMainWaste();
-  $("mainWastePreview").innerHTML = `<strong>ZeroWaste standard összes hulladék:</strong> ${mw.ok ? `${fmtNumber(mw.values.total,3)} kg` : "nem számítható"}<br><small>${escapeHtml(mw.basis || "")}</small>${mw.ok && !mw.componentValid ? `<div class="validation-box bad">A komponenshulladékok összege (${fmtNumber(mw.componentSum,3)} kg) meghaladja az összes hulladékot (${fmtNumber(mw.values.total,3)} kg).</div>` : ""}`;
+  $("mainWastePreview").innerHTML = `<strong>Egységesített összes hulladék:</strong> ${mw.ok ? `${fmtNumber(mw.values.total,3)} kg` : "nem számítható"}<br><small>${escapeHtml(mw.basis || "")}</small>${mw.ok && !mw.componentValid ? `<div class="validation-box bad">A komponenshulladékok összege (${fmtNumber(mw.componentSum,3)} kg) meghaladja az összes hulladékot (${fmtNumber(mw.values.total,3)} kg).</div>` : ""}`;
 
   updateFinalState();
 }
@@ -1239,7 +1286,8 @@ function downloadBlob(blob, filename) {
 }
 
 function csvEscape(v) {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  if (typeof v === "number" && Number.isFinite(v)) s = s.replace(".", ",");
   if (/[;"\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
   return s;
 }
@@ -1258,7 +1306,7 @@ async function exportCsv() {
 
 
 /* ------------------------------------------------------------------
- * ZeroWaste Entry exportcsomag (ZIP)
+ * Adatrögzítő modul exportcsomag (ZIP)
  *
  * A ZIP tárolási (store) móddal készül, külső JavaScript-könyvtár nélkül.
  * A JPEG-képek eleve tömörítettek, ezért a ZIP-deflate itt nem adna
@@ -1392,6 +1440,16 @@ function safePathSegment(x, fallback = "event") {
     .replace(/^_+|_+$/g, "") || fallback;
 }
 
+
+function safeDownloadFilenamePart(x, fallback = "adat") {
+  return String(x ?? "")
+    .normalize("NFC")
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[_. ]+|[_. ]+$/g, "") || fallback;
+}
+
 function semanticPhotoFilename(row, courseKey, dishName) {
   const datePart = safePathSegment(row.mealDate, "datum_nelkul");
   const dishPart = safePathSegment(dishName, courseKey === "soup" ? "leves" : "masodik_fogas");
@@ -1440,7 +1498,7 @@ async function exportEntryPackage() {
   const manifest = {
     package_type: "zerowaste-entry-package",
     schema_version: 1,
-    entry_app: "ZeroWaste Entry Web",
+    entry_app: "Adatrögzítő modul közétkeztetőknek",
     entry_app_version: APP_VERSION,
     exported_at: localIsoWithOffset(),
     filters: {
@@ -1465,8 +1523,33 @@ async function exportEntryPackage() {
 
   showToast("Exportcsomag készítése…", 1800);
   const blob = makeStoreZip(zipEntries);
-  downloadBlob(blob, `ZeroWaste_Entry_package_${from}_${to}.zip`);
-  showToast(`ZIP export elkészült: ${eventRows.length} esemény, ${mediaRows.length} fotó.`, 4200);
+
+  const datePart = from === to ? from : `${from}_${to}`;
+  const selectedInstitution = $("exportInstitution").value;
+  const rowInstitutions = [...new Set(sourceRows.map(r => r.institutionName).filter(Boolean))];
+  const institutionPart = safeDownloadFilenamePart(
+    selectedInstitution || (rowInstitutions.length === 1 ? rowInstitutions[0] : "minden_intezmeny"),
+    "ismeretlen_intezmeny"
+  );
+  const packageFilename = `${datePart}_élelmiszerhulladék_${institutionPart}.zip`;
+
+  downloadBlob(blob, packageFilename);
+
+  const shareFile = new File([blob], packageFilename, { type: "application/zip" });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+    try {
+      await navigator.share({
+        files: [shareFile],
+        title: "Élelmiszerhulladék-megfigyelési adatok",
+        text: "Adatrögzítő modulból származó export az élelmezésvezető részére."
+      });
+      showToast(`ZIP letöltve és megosztásra előkészítve: ${eventRows.length} esemény, ${mediaRows.length} fotó.`, 4600);
+      return;
+    } catch (err) {
+      if (err && err.name !== "AbortError") console.warn("Megosztási hiba:", err);
+    }
+  }
+  showToast(`ZIP letöltve: ${eventRows.length} esemény, ${mediaRows.length} fotó. Küldje tovább az élelmezésvezetőnek.`, 4600);
 }
 
 function makeSheetName(name) {
@@ -1512,7 +1595,7 @@ async function backupJson() {
   const institutions = await idbGetAll(STORE_INSTITUTIONS);
   const userDishes = await idbGetAll(STORE_DISHES);
   const obj = {
-    app: "ZeroWaste Entry Web",
+    app: "Adatrögzítő modul közétkeztetőknek",
     version: APP_VERSION,
     exportedAt: localIsoWithOffset(),
     submissions,
@@ -1520,20 +1603,20 @@ async function backupJson() {
     userDishes
   };
   downloadBlob(new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" }),
-    `ZeroWaste_Entry_backup_${todayISO()}.json`);
+    `adatrögzítő_modul_biztonsági_mentés_${todayISO()}.json`);
 }
 
 /* Master data */
 function renderInstitutionList(rows) {
   $("institutionList").innerHTML = rows.length
-    ? rows.map(x => `<div class="simple-item"><strong>${escapeHtml(x.institutionName)}</strong><div class="record-meta">Excel-lap: ${escapeHtml(x.sheetName)}</div></div>`).join("")
+    ? rows.map(x => `<div class="simple-item"><strong>${escapeHtml(x.institutionName)}</strong></div>`).join("")
     : `<div class="info-box muted">Nincs intézmény.</div>`;
 }
 
 async function addInstitution() {
   const name = safeText($("newInstitution").value);
   if (!name) return showToast("Adja meg az intézmény nevét.");
-  const sheet = makeSheetName(safeText($("newInstitutionSheet").value) || name);
+  const sheet = makeSheetName(name);
   await idbPut(STORE_INSTITUTIONS, {
     institutionName: name,
     sheetName: sheet,
@@ -1542,7 +1625,6 @@ async function addInstitution() {
     createdAt: localIsoWithOffset()
   });
   $("newInstitution").value = "";
-  $("newInstitutionSheet").value = "";
   await refreshInstitutionSelectors();
   showToast("Intézmény hozzáadva.");
 }
@@ -1710,6 +1792,6 @@ async function init() {
 document.addEventListener("DOMContentLoaded", () => {
   init().catch(err => {
     console.error(err);
-    alert(`ZeroWaste Entry indítási hiba: ${err.message}`);
+    alert(`Adatrögzítő modul indítási hiba: ${err.message}`);
   });
 });

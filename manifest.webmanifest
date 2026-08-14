@@ -1,11 +1,10 @@
 {
-  "name": "ZeroWaste Entry",
-  "short_name": "ZW Entry",
-  "description": "Digitális közétkeztetési élelmiszerhulladék- és érzékszervi adatgyűjtő",
-  "start_url": "./",
-  "scope": "./",
+  "name": "Adatrögzítő modul közétkeztetőknek",
+  "short_name": "Adatrögzítő modul",
+  "description": "Élelmiszerhulladék-keletkezési megfigyelési ív közétkeztetőknek",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f3f6f6",
+  "background_color": "#f7faf9",
   "theme_color": "#0f766e",
   "lang": "hu",
   "icons": [

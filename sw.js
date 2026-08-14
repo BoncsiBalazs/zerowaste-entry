@@ -1,14 +1,15 @@
-const CACHE_NAME = "zerowaste-entry-v2-5";
+const CACHE_NAME = "adatrögzítő-modul-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=2.5.0",
-  "./app.js?v=2.5.0",
-  "./data.js?v=2.5.0",
+  "./styles.css?v=3.0.0",
+  "./app.js?v=3.0.0",
+  "./data.js?v=3.0.0",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./logo.png"
+  "./logo.png",
+  "./mate_logo.png"
 ];
 
 self.addEventListener("install", event => {
