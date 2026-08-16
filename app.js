@@ -153,7 +153,7 @@ function showToast(message, ms = 2800) {
   showToast._timer = setTimeout(() => el.classList.add("hidden"), ms);
 }
 
-/* IndexedDB */
+/* IndexedDB-adattárolás */
 function openDatabase() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -240,7 +240,7 @@ async function seedReferenceInstitutions() {
   }
 }
 
-/* UI setup */
+/* A felhasználói felület előkészítése */
 async function populateAgeGroups() {
   const sel = $("ageGroup");
   DATA.ageGroups.forEach(x => {
@@ -441,7 +441,7 @@ function renderSensory(prefix, containerId) {
 function sensoryComplete(prefix) {
   return ATTRS.every(([key]) => {
     const s = sensoryState[prefix][key];
-    // Kötelező: pontszám + legalább egy, a tulajdonságlistából kiválasztott descriptor.
+    // Kötelező: pontszám és legalább egy, a tulajdonságlistából kiválasztott tulajdonságleíró.
     // Az „Egyéb tulajdonság” mező továbbra is opcionális, és nem helyettesíti a listás választást.
     return s.score !== null && s.descriptors.length > 0;
   });
@@ -457,7 +457,7 @@ function sensoryFlat(prefix) {
   return out;
 }
 
-/* Photo handling – compressed locally before IndexedDB storage */
+/* Fényképek kezelése – helyi tömörítés az IndexedDB-be történő mentés előtt */
 function compressPhoto(file, maxSide = 1280, quality = 0.78) {
   return new Promise((resolve, reject) => {
     if (!file) return resolve(null);
@@ -505,7 +505,7 @@ async function handlePhoto(prefix, file) {
   }
 }
 
-/* Dish status */
+/* Az étel adatainak állapota */
 async function updateDishStatus(kind) {
   const course = kind === "soup" ? "Leves" : "Második fogás";
   const inputId = kind === "soup" ? "soupDish" : "mainDish";
@@ -520,7 +520,7 @@ async function updateDishStatus(kind) {
   $(statusId).textContent = master.has(value) || user.has(value) ? "Törzsben szereplő étel" : "Új étel – beküldéskor a helyi törzsbe kerül";
 }
 
-/* Unit conversion */
+/* Mértékegységek átváltása */
 function renderExtraField(containerId, type, id, label, defaultValue = "") {
   const box = $(containerId);
   if (!type) {
@@ -540,13 +540,13 @@ function updateConversionExtras() {
   const age = selectedAge();
   const mainDish = safeText($("mainDish").value);
 
-  // soup served
+  // A leves kitálalt mennyisége
   const su = $("soupServedUnit").value;
   if (su === "kg") renderExtraField("soupServedExtra", "density", "soupServedDensity", "Leves sűrűsége (kg/L)", "1");
   else if (su === "darab") renderExtraField("soupServedExtra", "piece", "soupServedMlPiece", "Egy darab átlagos térfogata (ml/darab)");
   else $("soupServedExtra").innerHTML = "";
 
-  // main served
+  // A második fogás kitálalt mennyisége
   const mu = $("mainServedUnit").value;
   if (mu === "liter") renderExtraField("mainServedExtra", "density", "mainServedDensity", "Sűrűség (kg/L)", "1");
   else if (mu === "darab") renderExtraField("mainServedExtra", "piece", "mainServedGPiece", "Egy darab átlagos tömege (g/darab)");
@@ -559,7 +559,7 @@ function updateConversionExtras() {
     }
   } else $("mainServedExtra").innerHTML = "";
 
-  // soup waste
+  // A leves visszamért hulladéka
   const swu = $("soupWasteUnit").value;
   if (swu === "liter") renderExtraField("soupWasteExtra", "density", "soupWasteDensity", "Hulladék sűrűsége (kg/L)", "1");
   else if (swu === "darab") renderExtraField("soupWasteExtra", "piece", "soupWasteGPiece", "Egy darab átlagos tömege (g/darab)");
@@ -570,7 +570,7 @@ function updateConversionExtras() {
     } else renderExtraField("soupWasteExtra", "portion", "soupWasteGPortion", "Egy adag becsült tömege (g/adag)");
   } else $("soupWasteExtra").innerHTML = "";
 
-  // main waste
+  // A második fogás visszamért hulladéka
   const mwu = $("mainWasteUnit").value;
   if (mwu === "liter") renderExtraField("mainWasteExtra", "density", "mainWasteDensity", "Hulladék sűrűsége (kg/L)", "1");
   else if (mwu === "darab") renderExtraField("mainWasteExtra", "piece", "mainWasteGPiece", "Egy darab átlagos tömege (g/darab)");
@@ -608,7 +608,7 @@ function convertSoupServed() {
     if (!age) return { ok: false, value: NaN, basis: "Válasszon korosztályt." };
     const g = findPortionGuide("SOUP", age.reg_age_group);
     if (!g) return { ok: false, value: NaN, basis: "Nincs leves adagolási adat ehhez a korcsoporthoz." };
-    // guide mid_value is in dl
+    // Az adagolási útmutató `mid_value` értéke deciliterben van megadva.
     const literPerPortion = Number(g.mid_value) / 10;
     return { ok: true, value: value * literPerPortion, basis: `${fmtNumber(literPerPortion,3)} L/adag; ${age.reg_age_group}` };
   }
@@ -738,7 +738,7 @@ function updateTemp(prefix) {
   }
 }
 
-/* Validation */
+/* Adatellenőrzés */
 function stepErrors(stepIndex) {
   const errors = [];
   const requireText = (id, label) => { if (!safeText($(id).value)) errors.push(label); };
@@ -955,7 +955,7 @@ function goToStep(next) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-/* Review and submission */
+/* Áttekintés és mentés */
 function currentInstitutionRow() {
   return idbGetAll(STORE_INSTITUTIONS).then(rows =>
     rows.find(x => x.institutionName === $("institution").value) || null
@@ -1159,7 +1159,7 @@ function resetEntry() {
   goToStep(0);
 }
 
-/* Saved records */
+/* Mentett rekordok */
 async function renderSaved() {
   const rows = (await idbGetAll(STORE_SUBMISSIONS))
     .sort((a, b) => (b.submittedAt || "").localeCompare(a.submittedAt || ""));
@@ -1192,7 +1192,31 @@ async function renderSaved() {
   });
 }
 
-/* Export */
+async function deleteLatestSavedRecord() {
+  const rows = (await idbGetAll(STORE_SUBMISSIONS))
+    .sort((a, b) => (b.submittedAt || "").localeCompare(a.submittedAt || ""));
+
+  if (!rows.length) {
+    showToast("Nincs törölhető mentett rekord.");
+    return;
+  }
+
+  const r = rows[0];
+  const summary = [
+    r.mealDate || "dátum nélkül",
+    r.institutionName || "ismeretlen intézmény",
+    `${r.soupDish || "–"} / ${r.mainDish || "–"}`
+  ].join(" – ");
+
+  if (!confirm(`Biztosan törli a legutóbb mentett mérési eseményt?\n\n${summary}\n\nA törlés után ez a rekord a következő exportba már nem kerül bele.`)) return;
+
+  await idbDelete(STORE_SUBMISSIONS, r.submissionId);
+  await renderSaved();
+  await updateExportCount();
+  showToast("A legutóbbi rekord törölve.");
+}
+
+/* Adatkivitel */
 async function filteredExportRows() {
   const rows = await idbGetAll(STORE_SUBMISSIONS);
   const from = $("exportFrom").value;
@@ -1608,7 +1632,7 @@ async function backupJson() {
     `adatrögzítő_modul_biztonsági_mentés_${todayISO()}.json`);
 }
 
-/* Master data */
+/* Törzsadatok */
 function renderInstitutionList(rows) {
   $("institutionList").innerHTML = rows.length
     ? rows.map(x => `<div class="simple-item"><strong>${escapeHtml(x.institutionName)}</strong></div>`).join("")
@@ -1642,7 +1666,7 @@ function renderGuide() {
   ).join("") || `<div class="info-box muted">Nincs találat.</div>`;
 }
 
-/* Navigation and misc */
+/* Navigáció és egyéb funkciók */
 function switchView(name) {
   qsa(".view").forEach(v => v.classList.toggle("active", v.id === `view-${name}`));
   qsa(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === name));
@@ -1722,6 +1746,7 @@ function bindEvents() {
   bindById("mainSideTemp", "input", () => { updateTemp("mainSide"); updateFinalState(); });
 
   ["exportFrom","exportTo","exportInstitution"].forEach(id => bindById(id, "change", updateExportCount));
+  bindById("deleteLatestSavedBtn", "click", deleteLatestSavedRecord);
   bindById("exportCsvBtn", "click", exportCsv);
   bindById("exportXlsxBtn", "click", exportXlsx);
   bindById("exportZipBtn", "click", exportEntryPackage);

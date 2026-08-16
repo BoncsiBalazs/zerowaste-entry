@@ -37,7 +37,7 @@ self.addEventListener("fetch", event => {
 
   if (isAppAsset) {
     // Frissítéskor előbb a hálózatot próbáljuk, így nem keveredik
-    // az új HTML a régi JavaScript-tel. Offline esetben cache fallback.
+    // az új HTML a régi JavaScript-tel. Hálózat nélkül a gyorsítótár szolgál tartalék megoldásként.
     event.respondWith(
       fetch(event.request)
         .then(response => {
