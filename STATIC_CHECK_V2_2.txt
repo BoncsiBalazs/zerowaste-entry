@@ -1,8 +1,0 @@
-ZeroWaste Entry V2.2 static checks
-HTML IDs: 83
-Static JS ID refs: 57
-Missing static IDs: []
-Leves names: 100
-Második fogás names: 66
-node --check app.js: OK
-node --check sw.js: OK
