@@ -1,7 +1,7 @@
 {
-  "name": "Adatrögzítő modul közétkeztetőknek",
+  "name": "Adatrögzítő modul közétkeztetőknek – anonimizált verzió",
   "short_name": "Adatrögzítő modul",
-  "description": "Élelmiszerhulladék-keletkezési megfigyelési ív közétkeztetőknek",
+  "description": "Anonimizált demonstrációs élelmiszerhulladék-megfigyelési adatbeviteli modul közétkeztetőknek",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f7faf9",

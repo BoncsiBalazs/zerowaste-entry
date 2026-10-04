@@ -38,39 +38,39 @@ window.ZW_DATA = {
   ],
   "institutions": [
     {
-      "institution_name": "Aldebrő Tarnavölgye Általános Iskola",
-      "sheet_name": "Aldebrő Tarnavölgye Általános I",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Általános_iskola_01",
+      "sheet_name": "Általános_iskola_01",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Bélapátfalva Százszorszép Óvoda",
-      "sheet_name": "Bélapátfalva százszorszép óvoda",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Óvoda_01",
+      "sheet_name": "Óvoda_01",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Kál Bölcsőde",
-      "sheet_name": "Kál bölcsöde",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Bölcsőde_02",
+      "sheet_name": "Bölcsőde_02",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Kál Gárdonyi Géza Katolikus Általános Iskola",
-      "sheet_name": "Kál általános iskola",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Általános_iskola_02",
+      "sheet_name": "Általános_iskola_02",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Kál Százszorszép Óvoda",
-      "sheet_name": "Kál százszorszép óvoda",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Óvoda_02",
+      "sheet_name": "Óvoda_02",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Parád Bendegúz Óvoda",
-      "sheet_name": "Parád Bendegúz Óvoda",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Óvoda_03",
+      "sheet_name": "Óvoda_03",
+      "source": "anonimizált referencia"
     },
     {
-      "institution_name": "Sirok Országh Kristóf Általános Iskola",
-      "sheet_name": "Sirok Országh Kristóf Ált. Isko",
-      "source": "aktuális élelmiszerhulladék-adatállomány"
+      "institution_name": "Általános_iskola_03",
+      "sheet_name": "Általános_iskola_03",
+      "source": "anonimizált referencia"
     }
   ],
   "dishes": [
@@ -32155,9 +32155,9 @@ window.ZW_DATA = {
     }
   ],
   "meta": {
-    "version": "3.0.0",
-    "generatedAt": "2026-08-14",
-    "notes": "Adatrögzítő modul közétkeztetőknek – aktuális intézmény- és ételtörzs, CATA-érzékszervi skálák, feldolgozómodul-kompatibilis ZIP export"
+    "version": "3.1.0",
+    "generatedAt": "2026-10-04",
+    "notes": "Adatrögzítő modul közétkeztetőknek – anonimizált intézménytörzs, CATA-érzékszervi skálák, feldolgozómodul-kompatibilis ZIP export"
   },
   "recorders": []
 };

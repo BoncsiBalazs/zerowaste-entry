@@ -2,8 +2,8 @@
 "use strict";
 
 const DATA = window.ZW_DATA;
-const APP_VERSION = "3.0.0";
-const DB_NAME = "zerowaste-entry-web";
+const APP_VERSION = "3.1.0";
+const DB_NAME = "zerowaste-entry-public-anon-v1";
 const DB_VERSION = 1;
 const STORE_SUBMISSIONS = "submissions";
 const STORE_INSTITUTIONS = "institutions";
@@ -1808,7 +1808,7 @@ async function init() {
 
   if ("serviceWorker" in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js?v=2.2.0");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=3.1.0");
       await registration.update();
     } catch (err) {
       console.warn("Service worker registration failed:", err);

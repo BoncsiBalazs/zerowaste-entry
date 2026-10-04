@@ -9,10 +9,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=3.0.0">
-  <script src="./data.js?v=3.0.0"></script>
+  <link rel="stylesheet" href="./styles.css?v=3.1.0">
+  <script src="./data.js?v=3.1.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=3.0.0" defer></script>
+  <script src="./app.js?v=3.1.0" defer></script>
 </head>
 <body>
   <div id="app">
@@ -20,7 +20,7 @@
       <div class="brand-wrap">
         <img class="brand-logo mate-brand-logo" src="./mate_logo.png" alt="MATE logó">
         <div class="brand-text">
-          <div class="brand">Adatrögzítő modul közétkeztetőknek</div>
+          <div class="brand">Adatrögzítő modul közétkeztetőknek</div><div class="small-muted">Anonimizált bírálói / demonstrációs verzió</div>
         </div>
       </div>
       <div class="status-wrap">
@@ -59,8 +59,9 @@
               <h2>Étkezési esemény</h2>
 
               <label class="field">
-                <span>Adatrögzítő neve <b>*</b></span>
-                <input id="recorderName" type="text" autocomplete="name" placeholder="Adja meg az adatrögzítő nevét" required>
+                <span>Adatrögzítő azonosítója <b>*</b></span>
+                <input id="recorderName" type="text" autocomplete="off" placeholder="pl. Rögzítő_01" required>
+                <small class="small-muted">A nyilvános verzióban személynév helyett kódolt azonosítót használjon.</small>
               </label>
 
               <label class="field">
@@ -365,8 +366,8 @@
         <div class="card">
           <h2>Intézménytörzs</h2>
           <label class="field">
-            <span>Új intézmény neve</span>
-            <input id="newInstitution" type="text">
+            <span>Új intézmény anonim azonosítója</span>
+            <input id="newInstitution" type="text" placeholder="pl. Általános_iskola_04">
           </label>
           <button id="addInstitutionBtn" class="primary-btn" type="button">Intézmény hozzáadása</button>
           <div id="institutionList" class="simple-list"></div>

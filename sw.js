@@ -1,10 +1,10 @@
-const CACHE_NAME = "adatrögzítő-modul-v3";
+const CACHE_NAME = "adatrögzítő-modul-v3.1-anon";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=3.0.0",
-  "./app.js?v=3.0.0",
-  "./data.js?v=3.0.0",
+  "./styles.css?v=3.1.0",
+  "./app.js?v=3.1.0",
+  "./data.js?v=3.1.0",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
