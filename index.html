@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="stylesheet" href="./styles-public-anon-v4.css?v=4.0.0">
   <script>
-    // Publikus anonim kiadás: a korábbi alkalmazásverziók gyorsítótárának törlése.
+
     if ("caches" in window) {
       caches.keys().then(keys => Promise.all(
         keys.filter(k => k.startsWith("adatrögzítő-modul-") && k !== "adatrögzítő-modul-v4-anon")
@@ -29,7 +29,7 @@
       <div class="brand-wrap">
         <img class="brand-logo mate-brand-logo" src="./mate_logo.png" alt="MATE logó">
         <div class="brand-text">
-          <div class="brand">Adatrögzítő modul közétkeztetőknek</div><div class="small-muted">Anonimizált bírálói / demonstrációs verzió</div>
+          <div class="brand">Adatrögzítő modul közétkeztetőknek</div><div class="small-muted"> demonstrációs verzió</div>
         </div>
       </div>
       <div class="status-wrap">
