@@ -1,4 +1,0 @@
-Adatrögzítő modul – törzsadatok forrása
-
-Az intézmény- és ételtörzs a felhasználó által átadott aktuális adatfeldolgozó projekt referencia- és nyers állományaiból került frissítésre.
-Az ételtörzs az egységesített és a felhasználó által korábban jóváhagyott ételneveket egyesíti.
