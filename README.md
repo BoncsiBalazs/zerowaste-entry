@@ -19,3 +19,10 @@ A repository gyökerében lévő `index.html` közvetlenül publikálható GitHu
 
 ## Adatvédelmi megjegyzés
 A nyilvános forráskód nem tartalmazza a kutatás eredeti település- vagy intézményneveit, és nem tartalmaz eredeti–anonim megfeleltetési kulcsot.
+
+
+## Publikus anonim kiadás
+
+Ez a mappa a cache-biztos anonim GitHub Pages kiadás. Az `index.html` kizárólag az új, egyedi nevű `*-public-anon-v4.*` állományokat tölti be, és külön IndexedDB-adatbázist használ. Ez azért szükséges, hogy egy korábbi GitHub Pages/PWA-verzióból ne jelenhessenek meg régi intézménynevek.
+
+Feltöltéskor az `index.html` fájlt mindenképpen felül kell írni a repository gyökerében. A korábbi `app.js`, `data.js`, `styles.css` és `sw.js` fájlok törölhetők; az új index nem használja őket.

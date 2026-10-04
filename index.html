@@ -9,10 +9,19 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css?v=3.1.0">
-  <script src="./data.js?v=3.1.0"></script>
+  <link rel="stylesheet" href="./styles-public-anon-v4.css?v=4.0.0">
+  <script>
+    // Publikus anonim kiadás: a korábbi alkalmazásverziók gyorsítótárának törlése.
+    if ("caches" in window) {
+      caches.keys().then(keys => Promise.all(
+        keys.filter(k => k.startsWith("adatrögzítő-modul-") && k !== "adatrögzítő-modul-v4-anon")
+            .map(k => caches.delete(k))
+      )).catch(() => {});
+    }
+  </script>
+  <script src="./data-public-anon-v4.js?v=4.0.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="./app.js?v=3.1.0" defer></script>
+  <script src="./app-public-anon-v4.js?v=4.0.0" defer></script>
 </head>
 <body>
   <div id="app">
